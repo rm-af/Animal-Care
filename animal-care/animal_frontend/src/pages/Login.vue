@@ -2,6 +2,20 @@
   <div class="container-fluid vh-100 d-flex align-items-center justify-content-center text-white"
      style="background-color: #5b6ef5;">
 
+    <nav
+      class="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top"
+      style="background-color: #5b6ef5; z-index: 1000;">
+      <div class="container">
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center"
+          href="#">
+          <img src="/animal.png" alt="logo" class="logo-navbar me-2" />
+          <span class="fs-4">
+            Animal <span class="text-warning">Care</span>
+          </span>
+        </a>
+      </div>
+    </nav>
+
     <div class="row w-100">
       <div class="col-md-6 d-flex flex-column justify-content-center align-items-start ps-5">
         <h2 class="fw-bold">Form Login</h2>
@@ -76,6 +90,12 @@ export default {
 .btn-custom:hover {
   background-color: #5b6ef5; /* warna saat hover */
   color: #fff;
+}
+
+/* Logo navbar biar seimbang */
+.logo-navbar {
+  height: 56px; 
+  width: auto;
 }
 
 </style>
