@@ -1,13 +1,15 @@
 <template>
-  <div class="container-fluid vh-100 d-flex align-items-center justify-content-center text-white"
-     style="background-color: #5b6ef5;">
-
+  <div
+    class="container-fluid vh-100 d-flex align-items-center justify-content-center text-white"
+    style="background-color: #5b6ef5; padding-top: 80px;"
+  >
+    <!-- Navbar -->
     <nav
       class="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top"
-      style="background-color: #5b6ef5; z-index: 1000;">
+      style="background-color: #5b6ef5; z-index: 1000;"
+    >
       <div class="container">
-        <a class="navbar-brand fw-bold text-white d-flex align-items-center"
-          href="#">
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="#">
           <img src="/animal.png" alt="logo" class="logo-navbar me-2" />
           <span class="fs-4">
             Animal <span class="text-warning">Care</span>
@@ -16,38 +18,41 @@
       </div>
     </nav>
 
-    <div class="row w-100">
-      <div class="col-md-6 d-flex flex-column justify-content-center align-items-start ps-5">
-        <h2 class="fw-bold">Form Login</h2>
-        <p>Silahkan mengisikan Form Login untuk masuk ke akun anda.</p>
-      </div>
+    <!-- Konten -->
+    <div class="container">
+      <div class="row w-100 align-items-center">
+        <!-- Kolom Kiri (teks intro) -->
+        <div class="col-md-6 d-flex flex-column justify-content-center">
+          <h1 class="fw-bold display-4 mb-3">Form Login</h1>
+          <p class="lead fs-5">
+            Silahkan mengisikan Form Login untuk masuk ke akun anda dan nikmati layanan terbaik untuk perawatan hewan peliharaan Anda.
+          </p>
+        </div>
 
-      <div class="col-md-6 d-flex justify-content-center">
-        <div class="card p-4 shadow rounded-4" style="min-width: 350px;">
-          <form @submit.prevent="handleSubmit">
-    
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" v-model="form.email" class="form-control" required />
-            </div>
+        <!-- Kolom Kanan (form card) -->
+        <div class="col-md-6 d-flex justify-content-center">
+          <div class="card p-4 shadow rounded-4" style="min-width: 380px; max-width: 420px;">
+            <form @submit.prevent="handleSubmit">
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" v-model="form.email" class="form-control" required />
+              </div>
 
-            <div class="mb-3">
-              <label class="form-label">Password</label>
-              <input type="password" v-model="form.password" class="form-control" required />
-            </div>
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" v-model="form.password" class="form-control" required />
+              </div>
 
-          <button type="submit" class="btn btn-custom w-100 fw-bold">
-            Kirim
-          </button>
-        
-            <p class="mt-3 text-center">
-              Belum punya akun?
-              <router-link to="/regis" class="fw-bold text-decoration-none">Daftar</router-link>
-            </p>
+              <button type="submit" class="btn btn-custom w-100 fw-bold">
+                Kirim
+              </button>
 
-          
-
-          </form>
+              <p class="mt-3 text-center">
+                Belum punya akun?
+                <router-link to="/regis" class="fw-bold text-decoration-none">Daftar</router-link>
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -56,12 +61,10 @@
 
 <script>
 export default {
-  name: "RegisterForm",
+  name: "LoginForm",
   data() {
     return {
       form: {
-        username: "",
-        role: "",
         email: "",
         password: "",
       },
@@ -70,17 +73,13 @@ export default {
   methods: {
     handleSubmit() {
       console.log("Form Data:", this.form);
-      alert("Registrasi berhasil!");
+      alert("Login berhasil!");
     },
   },
 };
 </script>
 
 <style scoped>
-.container-fluid {
-  background-color: #5b6ef5; 
-}
-
 .btn-custom {
   background-color: #485ae3ff;
   color: #fff;
@@ -88,14 +87,12 @@ export default {
 }
 
 .btn-custom:hover {
-  background-color: #5b6ef5; /* warna saat hover */
+  background-color: #5b6ef5;
   color: #fff;
 }
 
-/* Logo navbar biar seimbang */
 .logo-navbar {
-  height: 56px; 
+  height: 56px;
   width: auto;
 }
-
 </style>

@@ -1,15 +1,12 @@
 <template>
   <div>
-    <!-- Navbar (sticky) -->
+    <!-- Navbar -->
     <nav
       class="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top"
       style="background-color: #5b6ef5; z-index: 1000;"
     >
       <div class="container">
-        <a
-          class="navbar-brand fw-bold text-white d-flex align-items-center"
-          href="#"
-        >
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="#">
           <img src="/animal.png" alt="logo" class="logo-navbar me-2" />
           <span class="fs-4">
             Animal <span class="text-warning">Care</span>
@@ -46,7 +43,7 @@
       </div>
     </nav>
 
-    <!-- Hero Section (full screen) -->
+    <!-- Hero Section -->
     <section
       class="d-flex align-items-center"
       style="background-color: #5b6ef5; height: 100vh; padding-top: 80px;"
@@ -55,15 +52,13 @@
         <div class="row align-items-center">
           <!-- Left Side Text -->
           <div class="col-md-6 text-white">
-            <h2 class="fw-bold mb-3">Ayo Periksa Hewan Kesayanganmu</h2>
-            <p class="mb-4" style="color: #dcdcdc;">
-              Cek berkala kesehatan hewan kesanganan anda agar tetap sehat dan happy
+            <h1 class="fw-bold mb-4 display-4" style="line-height: 1.3;">
+              Ayo Periksa Hewan <br /> Kesayanganmu
+            </h1>
+            <p class="mb-4 fs-5" style="color: #e6e6e6; max-width: 480px;">
+              Cek berkala kesehatan hewan kesayangan anda agar tetap sehat dan happy
             </p>
-            <!-- Tombol diarahkan ke /form_Antrian -->
-            <router-link
-              to="/Form_Antrian"
-              class="btn btn-success px-4 py-2 fw-bold"
-            >
+            <router-link to="/Form_Antrian" class="btn btn-success btn-daftar fw-bold">
               Daftar antrian
             </router-link>
           </div>
@@ -73,8 +68,7 @@
             <img
               src="/Ilustrasi.png"
               alt="Ilustrasi Vet Clinic"
-              class="img-fluid"
-              style="max-width: 90%;"
+              class="img-fluid hero-img"
             />
           </div>
         </div>
@@ -82,56 +76,43 @@
     </section>
 
     <!-- Layanan Section -->
-    <section id="layanan" class="py-5" style="background-color: #f5f7ff;">
+    <section id="layanan" class="py-5 section-bg">
       <div class="container text-center">
-        <h2 class="fw-bold mb-2 text-dark">Layanan Kami</h2>
-        <p class="text-muted mb-5">
-          Peliharaan sehat menghadirkan kebahagiaan abadi
-        </p>
+        <h2 class="fw-bold mb-2 section-title">Layanan Kami</h2>
+        <p class="text-muted mb-5">Peliharaan sehat menghadirkan kebahagiaan abadi</p>
 
-        <!-- Card hanya muncul kalau ada data -->
         <div class="row g-4" v-if="layananList.length > 0">
           <div class="col-md-4" v-for="layanan in layananList" :key="layanan.id">
             <div class="card shadow-sm border-0 h-100 text-center p-4">
-              <div class="mb-3" v-if="layanan.icon">
-                <img :src="layanan.icon" alt="icon" width="50" />
+              <div class="mb-3" v-if="layanan.logo">
+                <img :src="layanan.logo" alt="icon" width="50" />
               </div>
-              <h5 class="fw-bold text-primary">{{ layanan.title }}</h5>
-              <p class="text-muted small">{{ layanan.description }}</p>
+              <h5 class="fw-bold section-title">{{ layanan.nama_layanan }}</h5>
+              <p class="text-muted small">{{ layanan.deskripsi }}</p>
             </div>
           </div>
         </div>
-        <!-- Kalau kosong -->
         <p v-else class="text-muted">Belum ada layanan tersedia</p>
       </div>
     </section>
 
     <!-- Jenis Hewan Section -->
-    <section id="hewan" class="py-5" style="background-color: #f5f7ff;">
+    <section id="hewan" class="py-5 section-bg">
       <div class="container text-center">
-        <h2 class="fw-bold mb-2 text-dark">Jenis Hewan</h2>
-        <p class="text-muted mb-5">
-          Macam-macam hewan peliharaan yang bisa dilayani
-        </p>
+        <h2 class="fw-bold mb-2 section-title">Jenis Hewan</h2>
+        <p class="text-muted mb-5">Macam-macam hewan peliharaan yang bisa dilayani</p>
 
-        <!-- Card hanya muncul kalau ada data -->
         <div class="row g-4" v-if="hewanList.length > 0">
           <div class="col-md-4 col-lg-3" v-for="hewan in hewanList" :key="hewan.id">
             <div class="card shadow-sm border-0 h-100">
-              <img
-                v-if="hewan.image"
-                :src="hewan.image"
-                class="card-img-top"
-                alt="hewan"
-              />
+              <img v-if="hewan.foto" :src="hewan.foto" class="card-img-top" alt="hewan" />
               <div class="card-body">
-                <h6 class="fw-bold text-primary">{{ hewan.name }}</h6>
-                <p class="text-muted small">{{ hewan.description }}</p>
+                <h6 class="fw-bold section-title">{{ hewan.nama_hewan }}</h6>
+                <p class="text-muted small">{{ hewan.deskripsi }}</p>
               </div>
             </div>
           </div>
         </div>
-        <!-- Kalau kosong -->
         <p v-else class="text-muted">Belum ada data hewan tersedia</p>
       </div>
     </section>
@@ -146,35 +127,48 @@ export default {
     return {
       layananList: [],
       hewanList: [],
+      refreshInterval: null,
     };
   },
   mounted() {
-    // API Layanan
-    axios
-      .get("") // ganti sesuai endpoint
-      .then((res) => {
-        this.layananList = Array.isArray(res.data) ? res.data : [];
-      })
-      .catch(() => {
-        this.layananList = [];
-      });
+    this.fetchLayanan();
+    this.fetchHewan();
 
-    // API Hewan
-    axios
-      .get("") // ganti sesuai endpoint
-      .then((res) => {
+    // auto refresh setiap 10 detik biar realtime
+    this.refreshInterval = setInterval(() => {
+      this.fetchLayanan();
+      this.fetchHewan();
+    }, 10000);
+  },
+  beforeUnmount() {
+    clearInterval(this.refreshInterval);
+  },
+  methods: {
+    async fetchLayanan() {
+      try {
+        const res = await axios.get("http://localhost:3000/api/layanan");
+        this.layananList = Array.isArray(res.data) ? res.data : [];
+      } catch (error) {
+        console.error("Gagal fetch layanan:", error);
+        this.layananList = [];
+      }
+    },
+    async fetchHewan() {
+      try {
+        const res = await axios.get("http://localhost:3000/api/hewan");
         this.hewanList = Array.isArray(res.data) ? res.data : [];
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Gagal fetch hewan:", error);
         this.hewanList = [];
-      });
+      }
+    },
   },
 };
 </script>
 
 <style scoped>
 html {
-  scroll-behavior: smooth; /* biar smooth pas klik link */
+  scroll-behavior: smooth;
 }
 
 .card img {
@@ -182,7 +176,6 @@ html {
   object-fit: cover;
 }
 
-/* Active menu underline */
 .nav-link.router-link-active,
 .nav-link.router-link-exact-active {
   border-bottom: 2px solid #fff;
@@ -190,12 +183,10 @@ html {
   transition: all 0.3s ease;
 }
 
-/* Hover underline effect */
 .nav-link {
   position: relative;
   transition: all 0.3s ease;
 }
-
 .nav-link::after {
   content: "";
   position: absolute;
@@ -206,14 +197,36 @@ html {
   background-color: #fff;
   transition: width 0.3s ease;
 }
-
 .nav-link:hover::after {
   width: 100%;
 }
 
-/* Logo navbar biar seimbang */
 .logo-navbar {
-  height: 56px; /* lebih besar */
+  height: 56px;
   width: auto;
+}
+
+.hero-img {
+  max-width: 95%;
+  transform: scale(1.05);
+}
+
+.btn-daftar {
+  font-size: 1.2rem;
+  padding: 14px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+.btn-daftar:hover {
+  background-color: #28a745;
+  transform: translateY(-2px);
+}
+
+.section-bg {
+  background-color: #e8edff;
+}
+.section-title {
+  color: #5b6ef5;
 }
 </style>
