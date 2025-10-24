@@ -37,7 +37,7 @@
 
     <!-- CONTENT -->
     <main class="flex-grow-1 p-4">
-      <h3 class="fw-bold mb-2">Daftar antrian Pasien</h3>
+      <h3 class="fw-bold mb-2">Daftar Antrian Pasien</h3>
       <p class="text-muted mb-3">
         Daftar Antrian Pasien yang akan ditangani oleh Admin
       </p>
@@ -45,7 +45,7 @@
       <!-- TOTAL ANTRIAN -->
       <div class="mb-3">
         <span class="badge bg-warning text-dark p-2">
-          Total antrian : {{ antrian.length }}
+          Total antrian : {{ filteredAntrian.length }}
         </span>
       </div>
 
@@ -56,7 +56,7 @@
             Memuat data...
           </div>
 
-          <div v-else-if="antrian.length === 0" class="p-4 text-center text-muted">
+          <div v-else-if="filteredAntrian.length === 0" class="p-4 text-center text-muted">
             Belum ada data antrian.
           </div>
 
@@ -77,7 +77,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in antrian" :key="item.id">
+                <tr v-for="(item, index) in filteredAntrian" :key="item.id">
                   <td>{{ index + 1 }}</td>
                   <td>{{ item.nama_pemilik }}</td>
                   <td>{{ item.nama_hewan }}</td>
@@ -85,13 +85,14 @@
                   <td>{{ item.keluhan }}</td>
                   <td>{{ item.layanan }}</td>
                   <td>{{ item.no_hp }}</td>
-                  <td>{{ item.alamat }}</td>
                   <td>
-                    <span class="badge bg-warning text-dark">Menunggu</span>
+                    <span class="badge bg-warning text-dark">
+                      {{ item.status }}
+                    </span>
                   </td>
                   <td>
                     <button
-                      @click="tanganiAntrian(item.id)"
+                      @click="tanganiAntrian(item)"
                       class="btn btn-sm btn-danger"
                     >
                       Tangani
@@ -108,47 +109,61 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import axios from 'axios'
 
 const antrian = ref([])
 const loading = ref(false)
 
-const API_ANTRIAN = 'http://localhost:3000/api/antrian'
-const API_HISTORY = 'http://localhost:3000/api/history'
+const API_ANTRIAN = 'http://localhost:8000/api/antrian'
+const API_HISTORY = 'http://localhost:8000/api/history'
 
+// ✅ Hanya tampilkan antrian yang statusnya masih "Menunggu"
+const filteredAntrian = computed(() => antrian.value.filter(item => item.status === 'Menunggu'))
+
+// 🔹 Ambil data antrian dari API
 async function fetchAntrian() {
+  loading.value = true
   try {
-    loading.value = true
-    const res = await fetch(API_ANTRIAN)
-    const data = await res.json()
-    antrian.value = data
+    const res = await axios.get(API_ANTRIAN)
+    antrian.value = res.data
   } catch (err) {
-    console.error('Gagal ambil data antrian:', err)
+    console.error('❌ Gagal mengambil data antrian:', err)
   } finally {
     loading.value = false
   }
 }
 
-async function tanganiAntrian(id) {
-  if (!confirm('Tangani pasien ini?')) return
+// 🔹 Saat admin klik “Tangani”
+async function tanganiAntrian(item) {
+  if (!confirm('Apakah pasien ini sudah ditangani?')) return
 
   try {
-    const item = antrian.value.find(x => x.id === id)
-    await fetch(API_HISTORY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...item, status: 'Ditangani' })
+    // 1️⃣ Update status antrian jadi "Ditangani" (biar user tahu)
+    await axios.put(`${API_ANTRIAN}/${item.id}`, { ...item, status: 'Ditangani' })
+
+    // 2️⃣ Tambahkan data ke tabel history
+    await axios.post(API_HISTORY, {
+      ...item,
+      status: 'Ditangani',
+      waktu_selesai: new Date().toISOString(),
     })
-    await fetch(`${API_ANTRIAN}/${id}`, { method: 'DELETE' })
-    antrian.value = antrian.value.filter(x => x.id !== id)
+
+    // 3️⃣ Refresh data admin
+    await fetchAntrian()
+
+    alert('✅ Antrian berhasil ditangani dan dipindahkan ke history!')
   } catch (err) {
-    console.error('Gagal tangani antrian:', err)
+    console.error('❌ Gagal memproses antrian:', err)
+    alert('Terjadi kesalahan saat memproses antrian.')
   }
 }
 
+// Ambil data awal dan auto refresh
 onMounted(() => {
   fetchAntrian()
+  setInterval(fetchAntrian, 5000)
 })
 </script>
 
@@ -177,7 +192,8 @@ onMounted(() => {
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.table th, .table td {
+.table th,
+.table td {
   text-align: center;
   vertical-align: middle;
 }

@@ -8,6 +8,10 @@ import Dasboard from '@/pages/role_admin/Dasboard.vue'
 import Antrian_Admin from '@/pages/role_admin/Antrian_Admin.vue'
 import Layanan from '@/pages/role_admin/Layanan.vue'
 import Hewan from '@/pages/role_admin/Hewan.vue'
+import Update_Antrian from '@/CRUD/Update_Antrian.vue'
+import Update_Layanan from '@/CRUD/Update_Layanan.vue'
+import Update_Hewan from '@/CRUD/Update_Hewan.vue'
+
 
 const routes = [
 
@@ -35,6 +39,7 @@ const routes = [
     component : Form_Antrian
   },
 
+
   // Landing Page Admin
   {
     path : '/Dasboard',
@@ -55,10 +60,25 @@ const routes = [
     path : '/Hewan',
     name : 'Hewan',
     component : Hewan
-  }
+  },
 
 
   // CRUD
+  {
+    path : '/Update_Antrian',
+    name : 'Update_Antrian',
+    component : Update_Antrian
+  },
+  {
+    path : '/Update_Layanan',
+    name : 'Update_Layanan',
+    component : Update_Layanan
+  },
+  {
+    path : '/Update_Hewan',
+    name : 'Update_Hewan',
+    component : Update_Hewan
+  },
 ]
 
 const router = createRouter({

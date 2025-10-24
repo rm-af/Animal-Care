@@ -136,9 +136,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import { RouterLink } from 'vue-router'
 
-// Form state
+// State form
 const namaHewan = ref('')
 const deskripsi = ref('')
 const fileFoto = ref(null)
@@ -146,14 +147,14 @@ const previewFoto = ref(null)
 const isEditing = ref(false)
 const editId = ref(null)
 
-// Data state
+// State data
 const hewanList = ref([])
 const loading = ref(false)
 
-// Ganti URL API sesuai server kamu
+// Ganti dengan URL API kamu
 const API_HEWAN = 'http://localhost:3000/api/hewan'
 
-// File input handler
+// Upload foto handler
 function onFileChange(e) {
   const file = e.target.files[0]
   if (file) {
@@ -162,12 +163,12 @@ function onFileChange(e) {
   }
 }
 
-// Fetch data
+// Ambil data
 async function fetchHewan() {
   try {
     loading.value = true
-    const res = await fetch(API_HEWAN)
-    hewanList.value = await res.json()
+    const res = await axios.get(API_HEWAN)
+    hewanList.value = res.data
   } catch (err) {
     console.error('Gagal ambil data hewan:', err)
   } finally {
@@ -185,22 +186,17 @@ async function tambahHewan() {
       formData.append('foto', fileFoto.value)
     }
 
-    const res = await fetch(API_HEWAN, {
-      method: 'POST',
-      body: formData
-    })
-    if (!res.ok) throw new Error('Gagal tambah hewan')
-
-    alert('Hewan berhasil ditambahkan!')
+    await axios.post(API_HEWAN, formData)
+    alert('✅ Hewan berhasil ditambahkan!')
     resetForm()
     fetchHewan()
   } catch (err) {
-    console.error(err)
-    alert('Terjadi kesalahan saat menambahkan hewan')
+    console.error('Gagal tambah hewan:', err)
+    alert('❌ Terjadi kesalahan saat menambahkan hewan.')
   }
 }
 
-// Edit data
+// Edit data (isi form)
 function editHewan(item) {
   isEditing.value = true
   editId.value = item.id
@@ -219,18 +215,13 @@ async function updateHewan() {
       formData.append('foto', fileFoto.value)
     }
 
-    const res = await fetch(`${API_HEWAN}/${editId.value}`, {
-      method: 'PUT',
-      body: formData
-    })
-    if (!res.ok) throw new Error('Gagal update hewan')
-
-    alert('Hewan berhasil diperbarui!')
+    await axios.post(`${API_HEWAN}/${editId.value}?_method=PUT`, formData)
+    alert('✅ Hewan berhasil diperbarui!')
     resetForm()
     fetchHewan()
   } catch (err) {
-    console.error(err)
-    alert('Terjadi kesalahan saat memperbarui hewan')
+    console.error('Gagal update hewan:', err)
+    alert('❌ Terjadi kesalahan saat memperbarui data.')
   }
 }
 
@@ -238,14 +229,12 @@ async function updateHewan() {
 async function hapusHewan(id) {
   if (!confirm('Yakin ingin menghapus hewan ini?')) return
   try {
-    const res = await fetch(`${API_HEWAN}/${id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error('Gagal hapus hewan')
-
-    alert('Hewan berhasil dihapus!')
+    await axios.delete(`${API_HEWAN}/${id}`)
+    alert('🗑️ Hewan berhasil dihapus!')
     fetchHewan()
   } catch (err) {
-    console.error(err)
-    alert('Terjadi kesalahan saat menghapus hewan')
+    console.error('Gagal hapus hewan:', err)
+    alert('❌ Terjadi kesalahan saat menghapus hewan.')
   }
 }
 

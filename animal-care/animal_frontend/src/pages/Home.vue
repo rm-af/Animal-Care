@@ -58,8 +58,10 @@
             <p class="mb-4 fs-5" style="color: #e6e6e6; max-width: 480px;">
               Cek berkala kesehatan hewan kesayangan anda agar tetap sehat dan happy
             </p>
-            <router-link to="/Form_Antrian" class="btn btn-success btn-daftar fw-bold">
-              Daftar antrian
+            <router-link to="/Form_Antrian" class="btn btn-daftar fw-bold d-inline-flex align-items-center gap-2">
+              Daftar Antrian
+              <i class="fas fa-arrow-right"></i>
+              <span class="neon-border"></span>
             </router-link>
           </div>
 
@@ -134,7 +136,6 @@ export default {
     this.fetchLayanan();
     this.fetchHewan();
 
-    // auto refresh setiap 10 detik biar realtime
     this.refreshInterval = setInterval(() => {
       this.fetchLayanan();
       this.fetchHewan();
@@ -150,7 +151,6 @@ export default {
         this.layananList = Array.isArray(res.data) ? res.data : [];
       } catch (error) {
         console.error("Gagal fetch layanan:", error);
-        this.layananList = [];
       }
     },
     async fetchHewan() {
@@ -159,7 +159,6 @@ export default {
         this.hewanList = Array.isArray(res.data) ? res.data : [];
       } catch (error) {
         console.error("Gagal fetch hewan:", error);
-        this.hewanList = [];
       }
     },
   },
@@ -211,16 +210,55 @@ html {
   transform: scale(1.05);
 }
 
+/* Tombol Daftar Antrian */
 .btn-daftar {
+  position: relative;
   font-size: 1.2rem;
-  padding: 14px 40px;
+  padding: 14px 45px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 20px rgba(91, 110, 245, 0.4);
   transition: all 0.3s ease;
-}
-.btn-daftar:hover {
+  overflow: hidden;
+  border: none;
   background-color: #28a745;
-  transform: translateY(-2px);
+  color: #fff;
+}
+
+.btn-daftar i {
+  font-size: 1.2rem;
+}
+
+.btn-daftar:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px rgba(91, 110, 245, 0.8);
+}
+
+/* Efek neon animasi berputar */
+.btn-daftar .neon-border {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 14px;
+  background: linear-gradient(45deg, #00ff88, #5b6ef5, #ffc107, #ff0080, #00ff88);
+  background-size: 400%;
+  z-index: -1;
+  animation: spinNeon 5s linear infinite;
+  filter: blur(5px);
+}
+
+@keyframes spinNeon {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .section-bg {
@@ -230,3 +268,5 @@ html {
   color: #5b6ef5;
 }
 </style>
+
+

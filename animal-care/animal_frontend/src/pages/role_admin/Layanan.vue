@@ -143,6 +143,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import { RouterLink } from 'vue-router'
 
 const namaLayanan = ref('')
@@ -166,10 +167,10 @@ function onFileChange(e) {
 }
 
 async function fetchLayanan() {
+  loading.value = true
   try {
-    loading.value = true
-    const res = await fetch(API_LAYANAN)
-    layananList.value = await res.json()
+    const res = await axios.get(API_LAYANAN)
+    layananList.value = res.data
   } catch (err) {
     console.error('Gagal ambil data layanan:', err)
   } finally {
@@ -186,18 +187,13 @@ async function tambahLayanan() {
       formData.append('logo', fileLogo.value)
     }
 
-    const res = await fetch(API_LAYANAN, {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!res.ok) throw new Error('Gagal tambah layanan')
-    alert('Layanan berhasil ditambahkan!')
+    await axios.post(API_LAYANAN, formData)
+    alert('✅ Layanan berhasil ditambahkan!')
     resetForm()
     fetchLayanan()
   } catch (err) {
     console.error(err)
-    alert('Terjadi kesalahan saat menambahkan layanan')
+    alert('❌ Gagal menambahkan layanan')
   }
 }
 
@@ -218,31 +214,25 @@ async function updateLayanan() {
       formData.append('logo', fileLogo.value)
     }
 
-    const res = await fetch(`${API_LAYANAN}/${editId.value}`, {
-      method: 'PUT',
-      body: formData
-    })
-
-    if (!res.ok) throw new Error('Gagal update layanan')
-    alert('Layanan berhasil diperbarui!')
+    await axios.post(`${API_LAYANAN}/${editId.value}?_method=PUT`, formData)
+    alert('✅ Layanan berhasil diperbarui!')
     resetForm()
     fetchLayanan()
   } catch (err) {
     console.error(err)
-    alert('Terjadi kesalahan saat memperbarui layanan')
+    alert('❌ Gagal memperbarui layanan')
   }
 }
 
 async function hapusLayanan(id) {
   if (!confirm('Yakin ingin menghapus layanan ini?')) return
   try {
-    const res = await fetch(`${API_LAYANAN}/${id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error('Gagal hapus layanan')
-    alert('Layanan berhasil dihapus!')
+    await axios.delete(`${API_LAYANAN}/${id}`)
+    alert('✅ Layanan berhasil dihapus!')
     fetchLayanan()
   } catch (err) {
     console.error(err)
-    alert('Terjadi kesalahan saat menghapus layanan')
+    alert('❌ Gagal menghapus layanan')
   }
 }
 
@@ -255,9 +245,7 @@ function resetForm() {
   editId.value = null
 }
 
-onMounted(() => {
-  fetchLayanan()
-})
+onMounted(fetchLayanan)
 </script>
 
 <style scoped>

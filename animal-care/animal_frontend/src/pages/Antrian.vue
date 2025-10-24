@@ -33,7 +33,12 @@
               <a href="#hewan" class="nav-link text-white">Hewan</a>
             </li>
             <li class="nav-item me-4">
-              <router-link to="/Antrian" class="nav-link text-white">Antrian</router-link>
+              <router-link
+                to="/antrian"
+                class="nav-link text-white router-link-active"
+              >
+                Antrian
+              </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/login" class="btn btn-success ms-3">Login</router-link>
@@ -49,8 +54,10 @@
         <div class="text-white mb-5">
           <h2 class="fw-bold display-5">Daftar Antrian</h2>
           <p class="fs-5" style="max-width: 600px; line-height: 1.6;">
-            Jika daftar antrian sudah terbentuk, tunggu hingga status
-            <strong>“sudah ditangani”</strong> baru hewan anda sudah ditangani oleh dokter.
+            Setelah mendaftar, status akan <strong>“Menunggu”</strong>.
+            Jika dokter sudah menangani, status akan otomatis berubah menjadi
+            <strong>“Ditangani”</strong>. Anda hanya dapat mengedit atau menghapus
+            antrian selama status masih <strong>“Menunggu”</strong>.
           </p>
         </div>
 
@@ -84,7 +91,7 @@
                     class="badge"
                     :class="{
                       'bg-warning text-dark': item.status === 'Menunggu',
-                      'bg-info text-dark': item.status === 'Proses',
+                      'bg-info text-dark': item.status === 'Ditangani',
                       'bg-success': item.status === 'Selesai'
                     }"
                   >
@@ -92,21 +99,30 @@
                   </span>
                 </td>
                 <td>
-                  <!-- Tombol Edit pakai router-link -->
-                  <router-link
-                    :to="`/updateantrian/${item.id}`"
-                    class="btn btn-sm btn-outline-warning me-2">
-                    ✏️ Edit
-                  </router-link>
+                  <!-- Tombol edit & hapus hanya muncul jika status masih "Menunggu" -->
+                  <template v-if="item.status === 'Menunggu'">
+                    <router-link
+                      :to="`/Update_Antrian/${item.id}`"
+                      class="text-warning me-3 fs-5"
+                      title="Edit"
+                    >
+                      <i class="ri-edit-2-line"></i>
+                    </router-link>
+                    <i
+                      class="ri-delete-bin-2-line text-danger fs-5"
+                      style="cursor: pointer;"
+                      title="Hapus"
+                      @click="deleteAntrian(item.id)"
+                    ></i>
+                  </template>
 
-                  <!-- Tombol Hapus -->
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="deleteAntrian(item.id)">
-                    🗑️ Hapus
-                  </button>
+                  <!-- Jika sudah ditangani -->
+                  <span v-else class="text-muted small fst-italic">
+                    Tidak tersedia
+                  </span>
                 </td>
               </tr>
+
               <tr v-if="antrian.length === 0">
                 <td colspan="9" class="text-center text-muted py-4">
                   Belum ada data antrian.
@@ -121,44 +137,52 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   data() {
     return {
-      antrian: [] // data antrian dari API
+      antrian: [],
+      refreshInterval: null,
     };
   },
-   mounted() {
-    // Fetch data antrian
-    fetch("http://localhost:8000/api/antrian")
-      .then(res => res.json())
-      .then(data => this.antrian = data)
-      .catch(err => console.error(err));
+  mounted() {
+    this.fetchAntrian();
+    // Auto refresh agar sinkron dengan admin
+    this.refreshInterval = setInterval(this.fetchAntrian, 5000);
+  },
+  beforeUnmount() {
+    clearInterval(this.refreshInterval);
   },
   methods: {
-    // Hapus data antrian
-    deleteAntrian(id) {
-      if (confirm("Yakin ingin menghapus data ini?")) {
-        fetch(`http://localhost:8000/api/antrian/${id}`, {
-          method: "DELETE",
-        })
-          .then(res => {
-            if (res.ok) {
-              this.antrian = this.antrian.filter(item => item.id !== id);
-            } else {
-              console.error("Gagal menghapus data");
-            }
-          })
-          .catch(err => console.error(err));
+    async fetchAntrian() {
+      try {
+        const res = await axios.get("http://localhost:8000/api/antrian");
+        this.antrian = res.data;
+      } catch (err) {
+        console.error("Gagal memuat data antrian:", err);
       }
-    }
-  }
+    },
+
+    async deleteAntrian(id) {
+      if (!confirm("Yakin ingin menghapus antrian ini?")) return;
+      try {
+        await axios.delete(`http://localhost:8000/api/antrian/${id}`);
+        this.antrian = this.antrian.filter((item) => item.id !== id);
+        alert("Antrian berhasil dihapus!");
+      } catch (err) {
+        console.error("Gagal menghapus antrian:", err);
+        alert("Terjadi kesalahan saat menghapus data.");
+      }
+    },
+  },
 };
 </script>
 
 <style scoped>
 .antrian-section {
   background-color: #5b6ef5;
-  padding: 160px 0 80px; /* biar tidak terlalu ke atas */
+  padding: 160px 0 80px;
   min-height: 100vh;
 }
 
@@ -167,12 +191,12 @@ export default {
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .table thead {
-  background: #1de9b6; /* hijau toska terang */
-  color: #fff;
+  background: #1de9b6;
+  color: #000;
   text-align: center;
 }
 
@@ -186,32 +210,45 @@ export default {
   text-align: center;
   padding: 12px;
   font-size: 14px;
+  color: #000;
 }
 
 .table tbody tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
-/* Tombol Aksi */
-.btn-outline-warning,
-.btn-outline-danger {
-  border: none;
+/* Badge */
+.badge {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 
+/* Ikon aksi */
+.ri-edit-2-line:hover {
+  color: #e7b700;
+  transform: scale(1.1);
+  transition: 0.2s;
+}
+
+.ri-delete-bin-2-line:hover {
+  color: #ff3333;
+  transform: scale(1.1);
+  transition: 0.2s;
+}
+
+/* Navbar */
 .logo-navbar {
   height: 56px;
   width: auto;
 }
 
-/* Active menu underline */
 .nav-link.router-link-active,
 .nav-link.router-link-exact-active {
   border-bottom: 2px solid #fff;
   font-weight: bold;
   transition: all 0.3s ease;
 }
-
-/* Hover underline effect */
 .nav-link {
   position: relative;
   transition: all 0.3s ease;

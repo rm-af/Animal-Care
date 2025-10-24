@@ -9,8 +9,8 @@
 
       <ul class="nav flex-column gap-2">
         <li>
-          <RouterLink to="/Dasboard" class="nav-link active">
-            <i class="ri-home-8-line me-2"></i> Dasboard
+          <RouterLink to="/Dashboard" class="nav-link active">
+            <i class="ri-home-8-line me-2"></i> Dashboard
           </RouterLink>
         </li>
         <li>
@@ -35,56 +35,55 @@
 
     <!-- CONTENT -->
     <main class="flex-grow-1 p-4">
-      <!-- STATISTIK CARD -->
+      <h3 class="fw-bold mb-4">Dashboard Admin</h3>
+
+      <!-- CARD STATISTIK -->
       <div class="row g-3 mb-4">
-        <!-- Total Pasien -->
         <div class="col-md-4">
-          <div class="card stat-card bg-info text-white shadow-sm p-3 d-flex align-items-center">
-            <div class="icon-circle me-3">
+          <div class="dashboard-card bg-info text-white">
+            <div class="icon-circle">
               <i class="ri-user-line"></i>
             </div>
-            <div>
-              <h5 class="mb-1 fw-semibold">Total Pasien</h5>
-              <h2 class="fw-bold">{{ totalPasien }}</h2>
+            <div class="card-text">
+              <h6 class="fw-semibold mb-1">Total Pasien</h6>
+              <h2 class="fw-bold mb-0">{{ totalPasien }}</h2>
             </div>
           </div>
         </div>
 
-        <!-- Ditangani -->
         <div class="col-md-4">
-          <div class="card stat-card bg-success text-white shadow-sm p-3 d-flex align-items-center">
-            <div class="icon-circle me-3">
+          <div class="dashboard-card bg-success text-white">
+            <div class="icon-circle">
               <i class="ri-check-line"></i>
             </div>
-            <div>
-              <h5 class="mb-1 fw-semibold">Ditangani</h5>
-              <h2 class="fw-bold">{{ sudahDitangani }}</h2>
+            <div class="card-text">
+              <h6 class="fw-semibold mb-1">Ditangani</h6>
+              <h2 class="fw-bold mb-0">{{ sudahDitangani }}</h2>
             </div>
           </div>
         </div>
 
-        <!-- Belum Ditangani -->
         <div class="col-md-4">
-          <div class="card stat-card bg-danger text-white shadow-sm p-3 d-flex align-items-center">
-            <div class="icon-circle me-3">
+          <div class="dashboard-card bg-danger text-white">
+            <div class="icon-circle">
               <i class="ri-time-line"></i>
             </div>
-            <div>
-              <h5 class="mb-1 fw-semibold">Belum Ditangani</h5>
-              <h2 class="fw-bold">{{ belumDitangani }}</h2>
+            <div class="card-text">
+              <h6 class="fw-semibold mb-1">Belum Ditangani</h6>
+              <h2 class="fw-bold mb-0">{{ belumDitangani }}</h2>
             </div>
           </div>
         </div>
       </div>
 
       <!-- HISTORY COUNT -->
-      <div class="mb-2">
-        <span class="badge bg-warning text-dark p-2">
-          History : {{ history.length }}
+      <div class="mb-3">
+        <span class="badge bg-primary text-white p-2">
+          History: {{ history.length }} data
         </span>
       </div>
 
-      <!-- TABLE HISTORY -->
+      <!-- TABEL HISTORY -->
       <div class="card shadow-sm">
         <div class="card-body p-0">
           <div v-if="loading" class="p-4 text-center text-muted">
@@ -120,13 +119,11 @@
                   <td>{{ item.keluhan }}</td>
                   <td>{{ item.layanan }}</td>
                   <td>{{ item.no_hp }}</td>
-                  <td>{{ item.alamat }}</td>
-                  <td><span class="badge bg-success">Ditangani</span></td>
                   <td>
-                    <button
-                      @click="hapusHistory(item.id)"
-                      class="btn btn-sm btn-danger"
-                    >
+                    <span class="badge bg-success">Ditangani</span>
+                  </td>
+                  <td>
+                    <button @click="hapusHistory(item.id)" class="btn btn-sm btn-danger">
                       Hapus
                     </button>
                   </td>
@@ -143,54 +140,65 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import axios from 'axios'
 
+// STATE
 const history = ref([])
 const loading = ref(false)
-
 const totalPasien = ref(0)
 const sudahDitangani = ref(0)
 const belumDitangani = ref(0)
 
-const API_HISTORY = 'http://localhost:3000/api/history'
+// API
+const API_ANTRIAN = 'http://localhost:8000/api/antrian'
+const API_HISTORY = 'http://localhost:8000/api/history'
 
-async function fetchHistory() {
+// FETCH DATA
+async function fetchData() {
   try {
     loading.value = true
-    const res = await fetch(API_HISTORY)
-    const data = await res.json()
-    history.value = data
-    updateTotal()
+    const [antrianRes, historyRes] = await Promise.all([
+      axios.get(API_ANTRIAN),
+      axios.get(API_HISTORY)
+    ])
+
+    const antrianData = antrianRes.data
+    const historyData = historyRes.data
+
+    totalPasien.value = antrianData.length + historyData.length
+    sudahDitangani.value = historyData.length
+    belumDitangani.value = antrianData.filter(a => a.status === 'Menunggu').length
+
+    history.value = historyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   } catch (err) {
-    console.error('Gagal ambil data history:', err)
+    console.error('❌ Gagal mengambil data dashboard:', err)
   } finally {
     loading.value = false
   }
 }
 
+// HAPUS DATA
 async function hapusHistory(id) {
   if (!confirm('Yakin ingin hapus data ini?')) return
   try {
-    await fetch(`${API_HISTORY}/${id}`, { method: 'DELETE' })
+    await axios.delete(`${API_HISTORY}/${id}`)
     history.value = history.value.filter(item => item.id !== id)
-    updateTotal()
+    sudahDitangani.value = history.value.length
+    totalPasien.value = sudahDitangani.value + belumDitangani.value
   } catch (err) {
-    console.error('Gagal hapus data:', err)
+    console.error('❌ Gagal menghapus data:', err)
   }
 }
 
-function updateTotal() {
-  totalPasien.value = history.value.length
-  sudahDitangani.value = history.value.length
-  belumDitangani.value = 0
-}
-
+// AUTO REFRESH
 onMounted(() => {
-  fetchHistory()
+  fetchData()
+  setInterval(fetchData, 5000)
 })
 </script>
 
 <style scoped>
-/* --- Sidebar --- */
+/* Sidebar */
 .sidebar {
   background-color: #4c52c3;
   width: 230px;
@@ -199,6 +207,8 @@ onMounted(() => {
   width: 70px;
   border-radius: 50%;
 }
+
+/* Sidebar Links */
 .nav-link {
   color: white;
   padding: 10px 12px;
@@ -207,61 +217,52 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
 }
-.nav-link i {
-  font-size: 1.2rem;
-}
 .nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
 }
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.btn-danger {
-  font-weight: 600;
-}
 
-/* --- Statistik Card --- */
-.stat-card {
-  border-radius: 14px;
+/* === CARD DESAIN BARU === */
+.dashboard-card {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  cursor: default;
+  justify-content: start;
+  border-radius: 10px;
+  padding: 20px;
+  height: 110px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transition: 0.3s ease;
 }
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
-
 .icon-circle {
   width: 65px;
   height: 65px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-right: 15px;
 }
-
 .icon-circle i {
   font-size: 32px;
   color: #fff;
 }
-
-.stat-card h5 {
-  font-size: 18px;
-  letter-spacing: 0.3px;
+.card-text h6 {
+  font-size: 16px;
 }
-
-.stat-card h2 {
-  font-size: 30px;
+.card-text h2 {
+  font-size: 32px;
   margin: 0;
 }
 
-/* --- Table --- */
+/* Table */
 .table th,
 .table td {
   text-align: center;
