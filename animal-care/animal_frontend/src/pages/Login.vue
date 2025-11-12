@@ -116,7 +116,7 @@ export default {
 
         // Redirect sesuai role
         if (user.role === "Admin") {
-          this.$router.push("/dashboard");
+          this.$router.push("/dasboard");
         } else {
           this.$router.push("/home");
         }

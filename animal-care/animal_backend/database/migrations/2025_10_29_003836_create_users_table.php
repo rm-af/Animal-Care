@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('username', 50);
             $table->enum('role', ['Admin', 'User']);
             $table->string('email', 100);
-            $table->string('password', 50);
+            $table->string('password', 255); // ubah ke 255 agar cukup untuk hash bcrypt
+            $table->timestamps(); // 🟢 tambahkan ini
         });
     }
 
