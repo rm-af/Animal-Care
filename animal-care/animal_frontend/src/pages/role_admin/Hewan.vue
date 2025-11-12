@@ -9,58 +9,62 @@
 
       <ul class="nav flex-column gap-2">
         <li>
-          <RouterLink to="/Dasboard" class="nav-link">
-            <i class="ri-home-8-line me-2"></i> Dasboard
+          <RouterLink to="/dasboard" class="nav-link">
+            <i class="ri-home-8-line me-2"></i> Dashboard
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Antrian_Admin" class="nav-link">
+          <RouterLink to="/antrian_admin" class="nav-link">
             <i class="ri-file-list-3-line me-2"></i> Antrian
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Layanan" class="nav-link">
+          <RouterLink to="/layanan" class="nav-link">
             <i class="ri-add-circle-line me-2"></i> Layanan
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Hewan" class="nav-link active">
+          <RouterLink to="/hewan" class="nav-link active">
             <i class="ri-add-circle-line me-2"></i> Hewan
           </RouterLink>
         </li>
       </ul>
 
-      <button class="btn btn-danger mt-auto w-100">
-        <i class="ri-logout-circle-line me-1"></i> Logout
+      <button @click="logout" class="btn btn-danger mt-auto w-100 fw-semibold">
+        <i class="ri-logout-box-line me-2"></i> Logout
       </button>
     </aside>
 
     <!-- CONTENT -->
     <main class="flex-grow-1 p-4">
       <h3 class="fw-bold mb-2">Kelola Hewan</h3>
-      <p class="text-muted mb-3">Tambah, edit, dan hapus daftar jenis hewan</p>
+      <p class="text-muted mb-3">Tambah, edit, dan hapus data hewan peliharaan</p>
 
-      <!-- FORM TAMBAH / EDIT -->
-      <div class="card shadow-sm mb-4" style="max-width: 500px;">
+      <!-- FORM TAMBAH -->
+      <div class="card shadow-sm mb-4 form-card">
         <div class="card-body">
-          <form @submit.prevent="isEditing ? updateHewan() : tambahHewan()" enctype="multipart/form-data">
-            <!-- Foto Hewan -->
+          <form @submit.prevent="tambahHewan" enctype="multipart/form-data">
+            <!-- Gambar -->
             <div class="mb-3">
-              <label class="form-label fw-semibold">Foto hewan</label>
+              <label class="form-label fw-semibold">Gambar Hewan</label>
               <input
                 type="file"
                 class="form-control"
                 accept="image/*"
                 @change="onFileChange"
               />
-              <div v-if="previewFoto" class="mt-2 text-center">
-                <img :src="previewFoto" alt="Preview" class="img-thumbnail" width="100" />
+              <div v-if="previewGambar" class="mt-3 text-center">
+                <img
+                  :src="previewGambar"
+                  alt="Preview"
+                  class="img-thumbnail preview-logo rounded-circle shadow-sm"
+                />
               </div>
             </div>
 
             <!-- Nama Hewan -->
             <div class="mb-3">
-              <label class="form-label fw-semibold">Nama hewan</label>
+              <label class="form-label fw-semibold">Nama Hewan</label>
               <input
                 v-model="namaHewan"
                 type="text"
@@ -82,9 +86,8 @@
               ></textarea>
             </div>
 
-            <!-- Tombol -->
-            <button type="submit" class="btn btn-primary w-100 fw-semibold">
-              {{ isEditing ? 'Update' : 'Tambah' }}
+            <button type="submit" class="btn btn-primary w-100 fw-semibold" :disabled="submitting">
+              <i class="ri-add-line me-2"></i> Tambah
             </button>
           </form>
         </div>
@@ -93,36 +96,53 @@
       <!-- DAFTAR HEWAN -->
       <div class="card shadow-sm">
         <div class="card-body">
-          <h5 class="fw-bold mb-3">Daftar Hewan</h5>
+          <h5 class="fw-bold mb-3">
+            <i class="ri-list-settings-line me-2"></i> Daftar Hewan
+          </h5>
 
           <div v-if="loading" class="text-center text-muted py-3">
-            Memuat data...
+            <i class="ri-loader-4-line ri-spin me-2"></i> Memuat data...
           </div>
+
           <div v-else-if="hewanList.length === 0" class="text-center text-muted py-3">
-            Belum ada hewan.
+            <i class="ri-information-line me-2"></i> Belum ada data hewan.
           </div>
+
           <div v-else class="table-responsive">
             <table class="table table-bordered align-middle">
-              <thead class="table-light">
+              <thead style="background-color: #4cffe2;">
                 <tr>
                   <th>No</th>
-                  <th>Foto</th>
+                  <th>Gambar</th>
                   <th>Nama Hewan</th>
                   <th>Deskripsi</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in hewanList" :key="item.id">
+                <tr v-for="(item, index) in hewanList" :key="item.hewanId">
                   <td>{{ index + 1 }}</td>
                   <td>
-                    <img :src="item.foto_url" alt="foto hewan" width="50" class="rounded" />
+                    <img
+                      :src="getImageUrl(item.gambar)"
+                      alt="hewan"
+                      class="rounded-circle shadow-sm"
+                      width="60"
+                      height="60"
+                      style="object-fit: cover;"
+                    />
                   </td>
                   <td>{{ item.nama_hewan }}</td>
                   <td>{{ item.deskripsi }}</td>
                   <td>
-                    <button @click="editHewan(item)" class="btn btn-sm btn-warning me-2">Edit</button>
-                    <button @click="hapusHewan(item.id)" class="btn btn-sm btn-danger">Hapus</button>
+
+                    <button @click="goToUpdate(item.hewanId)" class="btn btn-sm btn-warning me-2">
+                      <i class="ri-edit-2-line"></i>
+                    </button>
+
+                    <button @click="hapusHewan(item.hewanId)" class="btn btn-sm btn-danger">
+                      <i class="ri-delete-bin-6-line"></i>
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -137,120 +157,106 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
-// State form
+const router = useRouter()
+
 const namaHewan = ref('')
 const deskripsi = ref('')
-const fileFoto = ref(null)
-const previewFoto = ref(null)
-const isEditing = ref(false)
-const editId = ref(null)
-
-// State data
+const fileGambar = ref(null)
+const previewGambar = ref(null)
 const hewanList = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 
-// Ganti dengan URL API kamu
-const API_HEWAN = 'http://localhost:3000/api/hewan'
+const API_HEWAN = 'http://127.0.0.1:8000/api/hewan'
 
-// Upload foto handler
+
+
+function getImageUrl(path) {
+  if (!path) return '/no-image.png'
+  if (path.startsWith('http')) return path
+  return `http://127.0.0.1:8000/storage/${path}`
+}
+
 function onFileChange(e) {
   const file = e.target.files[0]
   if (file) {
-    fileFoto.value = file
-    previewFoto.value = URL.createObjectURL(file)
+    fileGambar.value = file
+    previewGambar.value = URL.createObjectURL(file)
   }
 }
 
-// Ambil data
 async function fetchHewan() {
+  loading.value = true
   try {
-    loading.value = true
     const res = await axios.get(API_HEWAN)
-    hewanList.value = res.data
+    hewanList.value = Array.isArray(res.data) ? res.data : res.data.data || []
   } catch (err) {
-    console.error('Gagal ambil data hewan:', err)
+    console.error('❌ Gagal ambil data hewan:', err)
+    alert('Gagal memuat data hewan. Cek console untuk detail.')
   } finally {
     loading.value = false
   }
 }
 
-// Tambah data
 async function tambahHewan() {
+  submitting.value = true
   try {
     const formData = new FormData()
     formData.append('nama_hewan', namaHewan.value)
     formData.append('deskripsi', deskripsi.value)
-    if (fileFoto.value) {
-      formData.append('foto', fileFoto.value)
-    }
+    if (fileGambar.value) formData.append('gambar', fileGambar.value)
 
-    await axios.post(API_HEWAN, formData)
+    await axios.post(API_HEWAN, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
     alert('✅ Hewan berhasil ditambahkan!')
     resetForm()
     fetchHewan()
   } catch (err) {
-    console.error('Gagal tambah hewan:', err)
-    alert('❌ Terjadi kesalahan saat menambahkan hewan.')
+    console.error('Tambah error:', err)
+    alert('❌ Gagal menambahkan hewan. ' + (err.response?.data?.message || ''))
+  } finally {
+    submitting.value = false
   }
 }
 
-// Edit data (isi form)
-function editHewan(item) {
-  isEditing.value = true
-  editId.value = item.id
-  namaHewan.value = item.nama_hewan
-  deskripsi.value = item.deskripsi
-  previewFoto.value = item.foto_url
+function goToUpdate(id) {
+  router.push(`/update_hewan/${id}`)
 }
 
-// Update data
-async function updateHewan() {
-  try {
-    const formData = new FormData()
-    formData.append('nama_hewan', namaHewan.value)
-    formData.append('deskripsi', deskripsi.value)
-    if (fileFoto.value) {
-      formData.append('foto', fileFoto.value)
-    }
-
-    await axios.post(`${API_HEWAN}/${editId.value}?_method=PUT`, formData)
-    alert('✅ Hewan berhasil diperbarui!')
-    resetForm()
-    fetchHewan()
-  } catch (err) {
-    console.error('Gagal update hewan:', err)
-    alert('❌ Terjadi kesalahan saat memperbarui data.')
-  }
-}
-
-// Hapus data
 async function hapusHewan(id) {
+  if (!id) return alert('ID hewan tidak ditemukan!')
   if (!confirm('Yakin ingin menghapus hewan ini?')) return
   try {
     await axios.delete(`${API_HEWAN}/${id}`)
-    alert('🗑️ Hewan berhasil dihapus!')
+    alert('✅ Hewan berhasil dihapus!')
     fetchHewan()
   } catch (err) {
-    console.error('Gagal hapus hewan:', err)
-    alert('❌ Terjadi kesalahan saat menghapus hewan.')
+    console.error('Hapus error:', err)
+    alert('❌ Gagal menghapus hewan. ' + (err.response?.data?.message || ''))
   }
 }
 
-// Reset form
+function logout() {
+  if (confirm('Yakin ingin logout?')) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  }
+}
+
 function resetForm() {
   namaHewan.value = ''
   deskripsi.value = ''
-  fileFoto.value = null
-  previewFoto.value = null
-  isEditing.value = false
-  editId.value = null
+  fileGambar.value = null
+  previewGambar.value = null
+  submitting.value = false
 }
 
-onMounted(() => {
-  fetchHewan()
-})
+onMounted(fetchHewan)
 </script>
 
 <style scoped>
@@ -278,16 +284,20 @@ onMounted(() => {
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.card {
-  border-radius: 10px;
-}
 .table th,
 .table td {
   text-align: center;
   vertical-align: middle;
 }
-.btn-warning {
-  color: white;
+.btn-danger {
   font-weight: 600;
+}
+.form-card {
+  max-width: 500px;
+}
+.preview-logo {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
 }
 </style>

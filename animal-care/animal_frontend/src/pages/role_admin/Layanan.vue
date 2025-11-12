@@ -9,28 +9,28 @@
 
       <ul class="nav flex-column gap-2">
         <li>
-          <RouterLink to="/Dasboard" class="nav-link">
-            <i class="ri-home-8-line me-2"></i> Dasboard
+          <RouterLink to="/dasboard" class="nav-link">
+            <i class="ri-home-8-line me-2"></i> Dashboard
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Antrian_Admin" class="nav-link">
+          <RouterLink to="/antrian_admin" class="nav-link">
             <i class="ri-file-list-3-line me-2"></i> Antrian
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Layanan" class="nav-link active">
+          <RouterLink to="/layanan" class="nav-link active">
             <i class="ri-add-circle-line me-2"></i> Layanan
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/Hewan" class="nav-link">
+          <RouterLink to="/hewan" class="nav-link">
             <i class="ri-add-circle-line me-2"></i> Hewan
           </RouterLink>
         </li>
       </ul>
 
-      <button class="btn btn-danger mt-auto w-100">
+      <button @click="logout" class="btn btn-danger mt-auto w-100 fw-semibold">
         <i class="ri-logout-box-line me-2"></i> Logout
       </button>
     </aside>
@@ -40,10 +40,10 @@
       <h3 class="fw-bold mb-2">Kelola Layanan</h3>
       <p class="text-muted mb-3">Tambah, edit, dan hapus daftar layanan</p>
 
-      <!-- FORM TAMBAH / EDIT -->
-      <div class="card shadow-sm mb-4" style="max-width: 500px;">
+      <!-- FORM TAMBAH -->
+      <div class="card shadow-sm mb-4 form-card">
         <div class="card-body">
-          <form @submit.prevent="isEditing ? updateLayanan() : tambahLayanan()" enctype="multipart/form-data">
+          <form @submit.prevent="tambahLayanan" enctype="multipart/form-data">
             <!-- Logo -->
             <div class="mb-3">
               <label class="form-label fw-semibold">Logo layanan</label>
@@ -53,8 +53,12 @@
                 accept="image/*"
                 @change="onFileChange"
               />
-              <div v-if="previewLogo" class="mt-2 text-center">
-                <img :src="previewLogo" alt="Preview" class="img-thumbnail" width="100" />
+              <div v-if="previewLogo" class="mt-3 text-center">
+                <img
+                  :src="previewLogo"
+                  alt="Preview"
+                  class="img-thumbnail preview-logo rounded-circle shadow-sm"
+                />
               </div>
             </div>
 
@@ -82,10 +86,8 @@
               ></textarea>
             </div>
 
-            <!-- Tombol -->
-            <button type="submit" class="btn btn-primary w-100 fw-semibold">
-              <i :class="isEditing ? 'ri-edit-2-line' : 'ri-add-line'" class="me-2"></i>
-              {{ isEditing ? 'Update' : 'Tambah' }}
+            <button type="submit" class="btn btn-primary w-100 fw-semibold" :disabled="submitting">
+              <i class="ri-add-line me-2"></i> Tambah
             </button>
           </form>
         </div>
@@ -101,12 +103,14 @@
           <div v-if="loading" class="text-center text-muted py-3">
             <i class="ri-loader-4-line ri-spin me-2"></i> Memuat data...
           </div>
+
           <div v-else-if="layananList.length === 0" class="text-center text-muted py-3">
             <i class="ri-information-line me-2"></i> Belum ada layanan.
           </div>
+
           <div v-else class="table-responsive">
             <table class="table table-bordered align-middle">
-              <thead class="table-light">
+              <thead style="background-color: #4cffe2;">
                 <tr>
                   <th>No</th>
                   <th>Logo</th>
@@ -116,18 +120,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in layananList" :key="item.id">
+                <tr v-for="(item, index) in layananList" :key="item.layananId">
                   <td>{{ index + 1 }}</td>
                   <td>
-                    <img :src="item.logo_url" alt="logo" width="50" class="rounded" />
+                    <img
+                      :src="getImageUrl(item.logo)"
+                      alt="logo"
+                      class="rounded-circle shadow-sm"
+                      width="60"
+                      height="60"
+                      style="object-fit: cover;"
+                    />
                   </td>
                   <td>{{ item.nama_layanan }}</td>
                   <td>{{ item.deskripsi }}</td>
                   <td>
-                    <button @click="editLayanan(item)" class="btn btn-sm btn-warning me-2">
+                    <!-- Tombol Edit diarahkan ke halaman update -->
+                    <button @click="goToUpdate(item.layananId)" class="btn btn-sm btn-warning me-2">
                       <i class="ri-edit-2-line"></i>
                     </button>
-                    <button @click="hapusLayanan(item.id)" class="btn btn-sm btn-danger">
+                    <button @click="hapusLayanan(item.layananId)" class="btn btn-sm btn-danger">
                       <i class="ri-delete-bin-6-line"></i>
                     </button>
                   </td>
@@ -144,19 +156,27 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const namaLayanan = ref('')
 const deskripsi = ref('')
 const fileLogo = ref(null)
 const previewLogo = ref(null)
-const isEditing = ref(false)
-const editId = ref(null)
-
 const layananList = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 
-const API_LAYANAN = 'http://localhost:3000/api/layanan'
+const API_LAYANAN = 'http://127.0.0.1:8000/api/layanan'
+
+
+
+function getImageUrl(path) {
+  if (!path) return '/no-image.png'
+  if (path.startsWith('http')) return path
+  return `http://127.0.0.1:8000/storage/${path}`
+}
 
 function onFileChange(e) {
   const file = e.target.files[0]
@@ -170,69 +190,61 @@ async function fetchLayanan() {
   loading.value = true
   try {
     const res = await axios.get(API_LAYANAN)
-    layananList.value = res.data
+    layananList.value = Array.isArray(res.data) ? res.data : res.data.data || []
   } catch (err) {
-    console.error('Gagal ambil data layanan:', err)
+    console.error('❌ Gagal ambil data layanan:', err)
+    alert('Gagal memuat data layanan. Cek console untuk detail.')
   } finally {
     loading.value = false
   }
 }
 
 async function tambahLayanan() {
+  submitting.value = true
   try {
     const formData = new FormData()
     formData.append('nama_layanan', namaLayanan.value)
     formData.append('deskripsi', deskripsi.value)
-    if (fileLogo.value) {
-      formData.append('logo', fileLogo.value)
-    }
+    if (fileLogo.value) formData.append('logo', fileLogo.value)
 
-    await axios.post(API_LAYANAN, formData)
+    await axios.post(API_LAYANAN, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
     alert('✅ Layanan berhasil ditambahkan!')
     resetForm()
     fetchLayanan()
   } catch (err) {
-    console.error(err)
-    alert('❌ Gagal menambahkan layanan')
+    console.error('Tambah error:', err)
+    alert('❌ Gagal menambahkan layanan. ' + (err.response?.data?.message || ''))
+  } finally {
+    submitting.value = false
   }
 }
 
-function editLayanan(item) {
-  isEditing.value = true
-  editId.value = item.id
-  namaLayanan.value = item.nama_layanan
-  deskripsi.value = item.deskripsi
-  previewLogo.value = item.logo_url
-}
 
-async function updateLayanan() {
-  try {
-    const formData = new FormData()
-    formData.append('nama_layanan', namaLayanan.value)
-    formData.append('deskripsi', deskripsi.value)
-    if (fileLogo.value) {
-      formData.append('logo', fileLogo.value)
-    }
-
-    await axios.post(`${API_LAYANAN}/${editId.value}?_method=PUT`, formData)
-    alert('✅ Layanan berhasil diperbarui!')
-    resetForm()
-    fetchLayanan()
-  } catch (err) {
-    console.error(err)
-    alert('❌ Gagal memperbarui layanan')
-  }
+function goToUpdate(id) {
+  router.push(`/update_layanan/${id}`)
 }
 
 async function hapusLayanan(id) {
+  if (!id) return alert('ID layanan tidak ditemukan!')
   if (!confirm('Yakin ingin menghapus layanan ini?')) return
   try {
     await axios.delete(`${API_LAYANAN}/${id}`)
     alert('✅ Layanan berhasil dihapus!')
     fetchLayanan()
   } catch (err) {
-    console.error(err)
-    alert('❌ Gagal menghapus layanan')
+    console.error('Hapus error:', err)
+    alert('❌ Gagal menghapus layanan. ' + (err.response?.data?.message || ''))
+  }
+}
+
+function logout() {
+  if (confirm('Yakin ingin logout?')) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
   }
 }
 
@@ -241,8 +253,7 @@ function resetForm() {
   deskripsi.value = ''
   fileLogo.value = null
   previewLogo.value = null
-  isEditing.value = false
-  editId.value = null
+  submitting.value = false
 }
 
 onMounted(fetchLayanan)
@@ -273,16 +284,20 @@ onMounted(fetchLayanan)
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.card {
-  border-radius: 10px;
-}
 .table th,
 .table td {
   text-align: center;
   vertical-align: middle;
 }
-.btn-warning {
-  color: white;
+.btn-danger {
   font-weight: 600;
+}
+.form-card {
+  max-width: 500px;
+}
+.preview-logo {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
 }
 </style>

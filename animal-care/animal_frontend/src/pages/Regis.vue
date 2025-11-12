@@ -1,5 +1,5 @@
 <template>
-  <!-- padding agar form tidak ketutup navbar -->
+  
   <div
     class="container-fluid vh-100 d-flex align-items-center justify-content-center text-white"
     style="background-color: #5b6ef5; padding-top: 80px;"
@@ -22,7 +22,7 @@
     <!-- Konten -->
     <div class="container">
       <div class="row w-100 align-items-center">
-        <!-- Kolom Kiri (intro text) -->
+        <!-- Kolom Kiri -->
         <div class="col-md-6 d-flex flex-column justify-content-center">
           <h1 class="fw-bold display-4 mb-3">Form Register</h1>
           <p class="lead fs-5">
@@ -30,7 +30,7 @@
           </p>
         </div>
 
-        <!-- Kolom Kanan (form card) -->
+        <!-- Kolom Kanan -->
         <div class="col-md-6 d-flex justify-content-center">
           <div class="card p-4 shadow rounded-4" style="min-width: 380px; max-width: 420px;">
             <form @submit.prevent="handleSubmit">
@@ -71,6 +71,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "RegisterForm",
   data() {
@@ -84,9 +86,29 @@ export default {
     };
   },
   methods: {
-    handleSubmit() {
-      console.log("Form Data:", this.form);
-      alert("Registrasi berhasil!");
+    async handleSubmit() {
+      try {
+
+        const response = await axios.post("http://127.0.0.1:8000/api/register", this.form);
+
+        alert(response.data.message || "Registrasi berhasil!");
+
+
+        this.form.username = "";
+        this.form.role = "";
+        this.form.email = "";
+        this.form.password = "";
+
+
+        this.$router.push("/login");
+      } catch (error) {
+        if (error.response) {
+
+          alert(error.response.data.message || "Gagal registrasi!");
+        } else {
+          alert("Tidak dapat terhubung ke server.");
+        }
+      }
     },
   },
 };

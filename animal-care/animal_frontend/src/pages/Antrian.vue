@@ -8,10 +8,9 @@
       <div class="container">
         <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="#">
           <img src="/animal.png" alt="logo" class="logo-navbar me-2" />
-          <span class="fs-4">
-            Animal <span class="text-warning">Care</span>
-          </span>
+          <span class="fs-4">Animal <span class="text-warning">Care</span></span>
         </a>
+
         <button
           class="navbar-toggler"
           type="button"
@@ -24,24 +23,26 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto align-items-lg-center">
             <li class="nav-item me-4">
-              <router-link to="/" class="nav-link text-white">Home</router-link>
+              <router-link to="/" class="nav-link text-white nav-anim" exact>Home</router-link>
             </li>
             <li class="nav-item me-4">
-              <a href="#layanan" class="nav-link text-white">Layanan</a>
+              <router-link to="/layanan" class="nav-link text-white nav-anim">Layanan</router-link>
             </li>
             <li class="nav-item me-4">
-              <a href="#hewan" class="nav-link text-white">Hewan</a>
+              <router-link to="/hewan" class="nav-link text-white nav-anim">Hewan</router-link>
             </li>
             <li class="nav-item me-4">
-              <router-link
-                to="/antrian"
-                class="nav-link text-white router-link-active"
-              >
-                Antrian
-              </router-link>
+              <router-link to="/antrian" class="nav-link text-white nav-anim">Antrian</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/login" class="btn btn-success ms-3">Login</router-link>
+              <button
+                v-if="isLoggedIn"
+                @click="logout"
+                class="btn btn-danger ms-3"
+              >
+                Logout
+              </button>
+              <router-link v-else to="/login" class="btn btn-success ms-3">Login</router-link>
             </li>
           </ul>
         </div>
@@ -54,10 +55,10 @@
         <div class="text-white mb-5">
           <h2 class="fw-bold display-5">Daftar Antrian</h2>
           <p class="fs-5" style="max-width: 600px; line-height: 1.6;">
-            Setelah mendaftar, status akan <strong>“Menunggu”</strong>.
-            Jika dokter sudah menangani, status akan otomatis berubah menjadi
-            <strong>“Ditangani”</strong>. Anda hanya dapat mengedit atau menghapus
-            antrian selama status masih <strong>“Menunggu”</strong>.
+            Setelah mendaftar, status akan <strong>“Menunggu”</strong>.<br />
+            Jika dokter sedang menangani, status akan berubah menjadi
+            <strong>“Diproses”</strong>.<br />
+            Jika sudah selesai, status berubah menjadi <strong>“Selesai”</strong> dan tetap tampil di daftar Anda.
           </p>
         </div>
 
@@ -72,37 +73,36 @@
                 <th>Jenis Hewan</th>
                 <th>Keluhan</th>
                 <th>Layanan</th>
-                <th>No. Hp</th>
+                <th>No. HP</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, index) in antrian" :key="item.id">
+              <tr v-for="(item, index) in antrian" :key="item.antrianId">
                 <td>{{ index + 1 }}</td>
-                <td>{{ item.nama_pemilik }}</td>
+                <td>{{ item.user?.username || getUserName(item.userId) || "Tidak diketahui" }}</td>
                 <td>{{ item.nama_hewan }}</td>
-                <td>{{ item.jenis_hewan }}</td>
-                <td>{{ item.keluhan }}</td>
-                <td>{{ item.layanan }}</td>
-                <td>{{ item.no_hp }}</td>
+                <td>{{ item.hewan?.nama_hewan || '-' }}</td>
+                <td>{{ item.keluhan || "-" }}</td>
+                <td>{{ item.layanan?.nama_layanan || item.nama_layanan || "-" }}</td>
+                <td>{{ item.no_hp || "-" }}</td>
                 <td>
                   <span
                     class="badge"
                     :class="{
-                      'bg-warning text-dark': item.status === 'Menunggu',
-                      'bg-info text-dark': item.status === 'Ditangani',
-                      'bg-success': item.status === 'Selesai'
+                      'bg-warning text-dark': item.status?.toLowerCase() === 'menunggu',
+                      'bg-primary text-white': item.status?.toLowerCase() === 'diproses',
+                      'bg-success text-white': item.status?.toLowerCase() === 'selesai'
                     }"
                   >
-                    {{ item.status }}
+                    {{ item.status || '-' }}
                   </span>
                 </td>
                 <td>
-                  <!-- Tombol edit & hapus hanya muncul jika status masih "Menunggu" -->
-                  <template v-if="item.status === 'Menunggu'">
+                  <template v-if="item.status?.toLowerCase() === 'menunggu'">
                     <router-link
-                      :to="`/Update_Antrian/${item.id}`"
+                      :to="{ name: 'Update_Antrian', params: { id: item.antrianId } }"
                       class="text-warning me-3 fs-5"
                       title="Edit"
                     >
@@ -112,14 +112,10 @@
                       class="ri-delete-bin-2-line text-danger fs-5"
                       style="cursor: pointer;"
                       title="Hapus"
-                      @click="deleteAntrian(item.id)"
+                      @click="deleteAntrian(item.antrianId)"
                     ></i>
                   </template>
-
-                  <!-- Jika sudah ditangani -->
-                  <span v-else class="text-muted small fst-italic">
-                    Tidak tersedia
-                  </span>
+                  <span v-else class="text-muted small fst-italic">Tidak tersedia</span>
                 </td>
               </tr>
 
@@ -143,12 +139,15 @@ export default {
   data() {
     return {
       antrian: [],
+      users: [],
       refreshInterval: null,
+      isLoggedIn: false,
     };
   },
   mounted() {
+    this.checkLogin();
     this.fetchAntrian();
-    // Auto refresh agar sinkron dengan admin
+    this.fetchUsers();
     this.refreshInterval = setInterval(this.fetchAntrian, 5000);
   },
   beforeUnmount() {
@@ -157,23 +156,67 @@ export default {
   methods: {
     async fetchAntrian() {
       try {
-        const res = await axios.get("http://localhost:8000/api/antrian");
-        this.antrian = res.data;
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get("http://127.0.0.1:8000/api/antrian", { headers });
+
+        const user = JSON.parse(localStorage.getItem("user"));
+        const userId = user?.id || user?.userId;
+
+        const data = (res.data.data || res.data).map(a => ({
+          ...a,
+          antrianId: a.antrianId || a.id,
+          userId: a.userId || a.user_id || a.user?.id || null,
+          hewanId: a.hewanId || a.hewan_id || a.hewan?.id || null,
+        }));
+
+        this.antrian = data.filter(a => String(a.userId) === String(userId));
       } catch (err) {
-        console.error("Gagal memuat data antrian:", err);
+        console.error("❌ Gagal memuat data antrian:", err);
       }
+    },
+
+    async fetchUsers() {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/user");
+        this.users = res.data.data || res.data;
+      } catch (err) {
+        console.warn("ℹ️ Tidak bisa memuat user:", err);
+      }
+    },
+
+    getUserName(userId) {
+      const user = this.users.find(u => u.id === userId || u.userId === userId);
+      return user ? user.username || user.name : null;
     },
 
     async deleteAntrian(id) {
       if (!confirm("Yakin ingin menghapus antrian ini?")) return;
       try {
-        await axios.delete(`http://localhost:8000/api/antrian/${id}`);
-        this.antrian = this.antrian.filter((item) => item.id !== id);
-        alert("Antrian berhasil dihapus!");
+        const token = localStorage.getItem("token");
+        await axios.delete(`http://127.0.0.1:8000/api/antrian/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.antrian = this.antrian.filter(a => a.antrianId !== id);
+        alert("✅ Antrian berhasil dihapus!");
       } catch (err) {
-        console.error("Gagal menghapus antrian:", err);
+        console.error("❌ Gagal menghapus antrian:", err);
         alert("Terjadi kesalahan saat menghapus data.");
       }
+    },
+
+    checkLogin() {
+      const token = localStorage.getItem("token");
+      if (!token) this.$router.push("/login");
+      this.isLoggedIn = !!token;
+    },
+
+    logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      this.isLoggedIn = false;
+      alert("Berhasil logout!");
+      this.$router.push("/login");
     },
   },
 };
@@ -185,85 +228,78 @@ export default {
   padding: 160px 0 80px;
   min-height: 100vh;
 }
-
-/* Tabel */
 .table {
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
-
 .table thead {
   background: #1de9b6;
   color: #000;
   text-align: center;
 }
-
 .table thead th {
   font-weight: 600;
   padding: 14px;
   font-size: 15px;
 }
-
 .table tbody td {
   text-align: center;
   padding: 12px;
   font-size: 14px;
   color: #000;
 }
-
 .table tbody tr:nth-child(even) {
   background-color: #f9f9f9;
 }
-
-/* Badge */
 .badge {
   font-size: 13px;
   padding: 8px 12px;
   border-radius: 8px;
 }
-
-/* Ikon aksi */
 .ri-edit-2-line:hover {
   color: #e7b700;
   transform: scale(1.1);
   transition: 0.2s;
 }
-
 .ri-delete-bin-2-line:hover {
   color: #ff3333;
   transform: scale(1.1);
   transition: 0.2s;
 }
-
-/* Navbar */
 .logo-navbar {
   height: 56px;
   width: auto;
 }
 
-.nav-link.router-link-active,
-.nav-link.router-link-exact-active {
-  border-bottom: 2px solid #fff;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-.nav-link {
+
+.nav-anim {
   position: relative;
-  transition: all 0.3s ease;
+  padding-bottom: 6px;
+  font-weight: 500;
+  transition: color 0.3s ease;
 }
-.nav-link::after {
+.nav-anim::after {
   content: "";
   position: absolute;
-  width: 0%;
-  height: 2px;
   bottom: 0;
   left: 0;
-  background-color: #fff;
+  width: 0;
+  height: 2px;
+  background: #ffffff;
   transition: width 0.3s ease;
 }
-.nav-link:hover::after {
+.nav-anim:hover::after,
+.nav-anim.router-link-active::after {
   width: 100%;
+}
+.nav-anim.router-link-active {
+  font-weight: 600;
+  color: #fff !important;
+}
+.nav-anim:hover {
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
 }
 </style>

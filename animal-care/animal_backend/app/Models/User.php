@@ -2,31 +2,34 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $table = 'users';
+    protected $primaryKey = 'userId';
 
     /**
-     * The attributes that are mass assignable.
+     * Kolom yang boleh diisi (mass assignable)
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
+        'role'
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Kolom yang disembunyikan saat serialisasi (misal ke JSON)
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -34,7 +37,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Cast otomatis atribut ke tipe tertentu
      *
      * @return array<string, string>
      */
@@ -45,4 +48,21 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function antrians()
+{
+    return $this->hasMany(Antrian::class, 'userId', 'userId');
+}
+    
+    // public function antrians()
+    // {
+    //     return $this->hasMany(Antrian::class, 'userId', 'userId');
+    // }
+
+    // public function histories()
+    // {
+    //     return $this->hasMany(History::class, 'userId', 'userId');
+    // }
+
+
 }
