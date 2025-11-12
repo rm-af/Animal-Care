@@ -35,11 +35,7 @@
               <router-link to="/antrian" class="nav-link text-white nav-anim">Antrian</router-link>
             </li>
             <li class="nav-item">
-              <button
-                v-if="isLoggedIn"
-                @click="logout"
-                class="btn btn-danger ms-3"
-              >
+              <button v-if="isLoggedIn" @click="logout" class="btn btn-danger ms-3">
                 Logout
               </button>
               <router-link v-else to="/login" class="btn btn-success ms-3">Login</router-link>
@@ -58,7 +54,7 @@
             Setelah mendaftar, status akan <strong>“Menunggu”</strong>.<br />
             Jika dokter sedang menangani, status akan berubah menjadi
             <strong>“Diproses”</strong>.<br />
-            Jika sudah selesai, status berubah menjadi <strong>“Selesai”</strong> dan tetap tampil di daftar Anda.
+            Jika sudah selesai, status berubah menjadi <strong>“Selesai”</strong>.
           </p>
         </div>
 
@@ -111,8 +107,8 @@
                     <i
                       class="ri-delete-bin-2-line text-danger fs-5"
                       style="cursor: pointer;"
-                      title="Hapus"
-                      @click="deleteAntrian(item.antrianId)"
+                      title="Batalkan"
+                      @click="showDeletePopup(item.antrianId)"
                     ></i>
                   </template>
                   <span v-else class="text-muted small fst-italic">Tidak tersedia</span>
@@ -129,6 +125,29 @@
         </div>
       </div>
     </section>
+
+    <!-- ✅ Popup Batalkan Antrian -->
+    <div v-if="popupVisible" class="popup-overlay">
+      <div class="popup-card">
+        <img src="/cancel.png" alt="Cancel Icon" class="popup-icon" />
+        <h4 class="fw-bold mb-2">Batalkan Antrian?</h4>
+        <p class="text-secondary mb-4">Apakah Anda yakin ingin membatalkan antrian ini?</p>
+        <div class="d-flex justify-content-center gap-3">
+          <button class="btn btn-secondary px-4" @click="popupVisible = false">Tidak</button>
+          <button class="btn btn-danger px-4" @click="confirmDelete">Ya, Batalkan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ Popup Sukses -->
+    <div v-if="successPopup" class="popup-overlay">
+      <div class="popup-card">
+        <img src="/popup.png" alt="Success Icon" class="popup-icon" />
+        <h4 class="fw-bold mb-2 text-success">Antrian Dibatalkan</h4>
+        <p class="text-secondary mb-4">Antrian berhasil dibatalkan.</p>
+        <button class="btn btn-primary px-4" @click="successPopup = false">OK</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -142,6 +161,9 @@ export default {
       users: [],
       refreshInterval: null,
       isLoggedIn: false,
+      popupVisible: false,
+      successPopup: false,
+      deleteTargetId: null,
     };
   },
   mounted() {
@@ -159,7 +181,6 @@ export default {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await axios.get("http://127.0.0.1:8000/api/antrian", { headers });
-
         const user = JSON.parse(localStorage.getItem("user"));
         const userId = user?.id || user?.userId;
 
@@ -190,18 +211,23 @@ export default {
       return user ? user.username || user.name : null;
     },
 
-    async deleteAntrian(id) {
-      if (!confirm("Yakin ingin menghapus antrian ini?")) return;
+    showDeletePopup(id) {
+      this.deleteTargetId = id;
+      this.popupVisible = true;
+    },
+
+    async confirmDelete() {
       try {
         const token = localStorage.getItem("token");
-        await axios.delete(`http://127.0.0.1:8000/api/antrian/${id}`, {
+        await axios.delete(`http://127.0.0.1:8000/api/antrian/${this.deleteTargetId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        this.antrian = this.antrian.filter(a => a.antrianId !== id);
-        alert("✅ Antrian berhasil dihapus!");
+        this.antrian = this.antrian.filter(a => a.antrianId !== this.deleteTargetId);
+        this.popupVisible = false;
+        this.successPopup = true;
       } catch (err) {
-        console.error("❌ Gagal menghapus antrian:", err);
-        alert("Terjadi kesalahan saat menghapus data.");
+        console.error("❌ Gagal membatalkan antrian:", err);
+        alert("Terjadi kesalahan saat membatalkan antrian.");
       }
     },
 
@@ -272,8 +298,6 @@ export default {
   height: 56px;
   width: auto;
 }
-
-
 .nav-anim {
   position: relative;
   padding-bottom: 6px;
@@ -301,5 +325,43 @@ export default {
 .nav-anim:hover {
   color: #ffffff !important;
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+/* === Popup Style === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.popup-card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 380px;
+  width: 90%;
+  animation: popIn 0.3s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.popup-icon {
+  width: 90px;
+  margin-bottom: 15px;
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

@@ -89,7 +89,7 @@ public function register(Request $request)
             ], HttpResponse::HTTP_UNAUTHORIZED);
         }
 
-        
+
         $user->tokens()->delete();
 
         $token = $user->createToken('login_token')->plainTextToken;

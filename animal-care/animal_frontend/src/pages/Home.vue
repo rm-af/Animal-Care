@@ -26,7 +26,7 @@
               <router-link to="/" class="nav-link text-white nav-anim" exact>Home</router-link>
             </li>
             <li class="nav-item me-4">
-              
+
               <a
                 href="#layanan"
                 class="nav-link text-white nav-anim"
@@ -156,7 +156,7 @@
     <section id="hewan" class="py-5 section-bg">
       <div class="container text-center">
         <h2 class="fw-bold mb-2 section-title">Jenis Hewan</h2>
-        <p class="text-muted mb-5">Macam-macam hewan peliharaan yang bisa dilayani</p>
+        <p class="text-muted mb-5">Macam-macam hewan peliharaan yang bisa kami layani</p>
 
         <div class="row g-4" v-if="hewanList.length > 0">
           <div
@@ -206,7 +206,7 @@ export default {
       charIndex: 0,
       typingSpeed: 50,
       deletingSpeed: 30,
-      pauseAfterTyped: 1650,
+      pauseAfterTyped: 3000,
       pauseAfterDeleted: 400,
       typingTimer: null,
       deletingTimer: null,

@@ -47,12 +47,7 @@
             <!-- Gambar -->
             <div class="mb-3">
               <label class="form-label fw-semibold">Gambar Hewan</label>
-              <input
-                type="file"
-                class="form-control"
-                accept="image/*"
-                @change="onFileChange"
-              />
+              <input type="file" class="form-control" accept="image/*" @change="onFileChange" />
               <div v-if="previewGambar" class="mt-3 text-center">
                 <img
                   :src="previewGambar"
@@ -135,12 +130,10 @@
                   <td>{{ item.nama_hewan }}</td>
                   <td>{{ item.deskripsi }}</td>
                   <td>
-
                     <button @click="goToUpdate(item.hewanId)" class="btn btn-sm btn-warning me-2">
                       <i class="ri-edit-2-line"></i>
                     </button>
-
-                    <button @click="hapusHewan(item.hewanId)" class="btn btn-sm btn-danger">
+                    <button @click="konfirmasiHapus(item)" class="btn btn-sm btn-danger">
                       <i class="ri-delete-bin-6-line"></i>
                     </button>
                   </td>
@@ -151,6 +144,35 @@
         </div>
       </div>
     </main>
+
+    <!-- POPUP -->
+    <transition name="fade-scale">
+      <div v-if="popup.show" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img :src="popup.image" alt="popup" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">{{ popup.title }}</h4>
+          <p class="text-muted">{{ popup.message }}</p>
+
+          <!-- Tombol konfirmasi -->
+          <div
+            v-if="popup.type === 'confirm'"
+            class="d-flex justify-content-center gap-3 mt-3"
+          >
+            <button class="btn btn-danger fw-bold px-4" @click="hapusHewan(popup.item)">
+              Ya
+            </button>
+            <button class="btn btn-secondary fw-bold px-4" @click="closePopup">
+              Tidak
+            </button>
+          </div>
+
+          <!-- Tombol OK -->
+          <button v-else class="btn btn-popup mt-3 fw-bold" @click="closePopup">
+            OK
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -160,7 +182,6 @@ import axios from 'axios'
 import { RouterLink, useRouter } from 'vue-router'
 
 const router = useRouter()
-
 const namaHewan = ref('')
 const deskripsi = ref('')
 const fileGambar = ref(null)
@@ -171,7 +192,14 @@ const submitting = ref(false)
 
 const API_HEWAN = 'http://127.0.0.1:8000/api/hewan'
 
-
+const popup = ref({
+  show: false,
+  type: '',
+  title: '',
+  message: '',
+  image: '',
+  item: null,
+})
 
 function getImageUrl(path) {
   if (!path) return '/no-image.png'
@@ -194,7 +222,6 @@ async function fetchHewan() {
     hewanList.value = Array.isArray(res.data) ? res.data : res.data.data || []
   } catch (err) {
     console.error('❌ Gagal ambil data hewan:', err)
-    alert('Gagal memuat data hewan. Cek console untuk detail.')
   } finally {
     loading.value = false
   }
@@ -212,39 +239,65 @@ async function tambahHewan() {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
 
-    alert('✅ Hewan berhasil ditambahkan!')
+    popup.value = {
+      show: true,
+      type: 'info',
+      image: '/popup.png',
+      title: 'Hewan Berhasil Ditambahkan!',
+      message: `Hewan "${namaHewan.value}" telah disimpan.`,
+    }
     resetForm()
     fetchHewan()
   } catch (err) {
-    console.error('Tambah error:', err)
-    alert('❌ Gagal menambahkan hewan. ' + (err.response?.data?.message || ''))
+    console.error('❌ Gagal tambah hewan:', err)
   } finally {
     submitting.value = false
   }
+}
+
+function konfirmasiHapus(item) {
+  popup.value = {
+    show: true,
+    type: 'confirm',
+    image: '/cancel.png',
+    title: 'Hapus Hewan?',
+    message: `Yakin ingin menghapus data hewan "${item.nama_hewan}"?`,
+    item,
+  }
+}
+
+async function hapusHewan(item) {
+  try {
+    await axios.delete(`${API_HEWAN}/${item.hewanId}`)
+    popup.value = {
+      show: true,
+      type: 'info',
+      image: '/popup.png',
+      title: 'Hewan Berhasil Dihapus!',
+      message: `Data hewan "${item.nama_hewan}" telah dihapus.`,
+    }
+    fetchHewan()
+  } catch (err) {
+    console.error('❌ Gagal hapus hewan:', err)
+  }
+}
+
+function closePopup() {
+  popup.value.show = false
 }
 
 function goToUpdate(id) {
   router.push(`/update_hewan/${id}`)
 }
 
-async function hapusHewan(id) {
-  if (!id) return alert('ID hewan tidak ditemukan!')
-  if (!confirm('Yakin ingin menghapus hewan ini?')) return
-  try {
-    await axios.delete(`${API_HEWAN}/${id}`)
-    alert('✅ Hewan berhasil dihapus!')
-    fetchHewan()
-  } catch (err) {
-    console.error('Hapus error:', err)
-    alert('❌ Gagal menghapus hewan. ' + (err.response?.data?.message || ''))
-  }
-}
-
 function logout() {
-  if (confirm('Yakin ingin logout?')) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/login')
+  popup.value = {
+    show: true,
+    type: 'confirm',
+    image: '/cancel.png',
+    title: 'Konfirmasi Logout',
+    message: 'Yakin ingin keluar dari akun admin?',
+    item: { logout: true },
   }
 }
 
@@ -253,7 +306,6 @@ function resetForm() {
   deskripsi.value = ''
   fileGambar.value = null
   previewGambar.value = null
-  submitting.value = false
 }
 
 onMounted(fetchHewan)
@@ -275,9 +327,6 @@ onMounted(fetchHewan)
   display: flex;
   align-items: center;
 }
-.nav-link i {
-  font-size: 18px;
-}
 .nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
 }
@@ -289,9 +338,6 @@ onMounted(fetchHewan)
   text-align: center;
   vertical-align: middle;
 }
-.btn-danger {
-  font-weight: 600;
-}
 .form-card {
   max-width: 500px;
 }
@@ -299,5 +345,60 @@ onMounted(fetchHewan)
   width: 100px;
   height: 100px;
   object-fit: cover;
+}
+
+/* === POPUP STYLE SAMA SEPERTI LAYANAN === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+.btn-popup:hover {
+  opacity: 0.9;
+}
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

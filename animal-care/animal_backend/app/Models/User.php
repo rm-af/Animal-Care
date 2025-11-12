@@ -13,6 +13,7 @@ class User extends Authenticatable
 
     protected $table = 'users';
     protected $primaryKey = 'userId';
+    public $timestamps = false;
 
     /**
      * Kolom yang boleh diisi (mass assignable)
@@ -53,7 +54,7 @@ class User extends Authenticatable
 {
     return $this->hasMany(Antrian::class, 'userId', 'userId');
 }
-    
+
     // public function antrians()
     // {
     //     return $this->hasMany(Antrian::class, 'userId', 'userId');

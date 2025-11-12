@@ -10,9 +10,16 @@
           <img src="/animal.png" alt="logo" class="logo-navbar me-2" />
           <span class="fs-4">Animal <span class="text-warning">Care</span></span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
           <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto align-items-lg-center">
             <li class="nav-item me-4"><router-link to="/" class="nav-link text-white">Home</router-link></li>
@@ -28,19 +35,20 @@
       </div>
     </nav>
 
-    <!-- Form Update Antrian -->
-    <section class="d-flex align-items-center" style="background-color: #5b6ef5; min-height: 100vh; padding-top: 80px;">
+    <!-- FORM UPDATE ANTRIAN -->
+    <section class="d-flex align-items-center"
+      style="background-color: #5b6ef5; min-height: 100vh; padding-top: 80px;">
       <div class="container">
         <div class="row align-items-center">
           <!-- Kiri -->
           <div class="col-md-6 text-white mb-4 mb-md-0">
             <h2 class="fw-bold display-5 mb-4">Form Update Antrian</h2>
             <p class="text-light fs-5 lh-lg" style="max-width: 480px;">
-              Silakan ubah data antrian Anda. Data lama akan otomatis muncul di form ini.
+              Silakan ubah data antrian Anda. Data lama akan otomatis dimuat di form ini.
             </p>
           </div>
 
-          <!-- Kanan Form -->
+          <!-- Form -->
           <div class="col-md-6 d-flex justify-content-center">
             <div class="card shadow-lg border-0 p-4 rounded-4 w-100" style="max-width: 420px;">
               <form @submit.prevent="updateAntrian">
@@ -79,8 +87,11 @@
                   <input v-model="form.no_hp" type="text" class="form-control rounded-pill" required />
                 </div>
 
-                <button type="submit" class="btn w-100 text-white fw-bold py-2"
-                  :disabled="loading" style="background-color: #00a8e8; border-radius: 20px; font-size: 1rem;">
+                <button
+                  type="submit"
+                  class="btn btn-custom w-100 fw-bold py-2"
+                  :disabled="loading"
+                >
                   {{ loading ? "Menyimpan..." : "Update Data" }}
                 </button>
               </form>
@@ -89,6 +100,18 @@
         </div>
       </div>
     </section>
+
+    <!-- POPUP SUKSES (Gaya Sama Seperti Login) -->
+    <transition name="fade-scale">
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img src="/popup.png" alt="success" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">Antrian Berhasil Diperbarui!</h4>
+          <p class="text-muted">Perubahan data antrian Anda telah disimpan dengan sukses.</p>
+          <button class="btn btn-popup mt-3 fw-bold" @click="goToAntrian">Lihat Antrian</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -100,9 +123,10 @@ import axios from "axios";
 const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
-const loading = ref(false);
-const isLoggedIn = ref(!!localStorage.getItem("token"));
 
+const loading = ref(false);
+const showPopup = ref(false);
+const isLoggedIn = ref(!!localStorage.getItem("token"));
 
 const form = ref({
   nama_hewan: "",
@@ -165,14 +189,19 @@ async function updateAntrian() {
       form.value,
       { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
     );
-    alert("✅ Data antrian berhasil diperbarui!");
-    router.push("/antrian");
+
+    showPopup.value = true;
   } catch (err) {
-    console.error("❌ Gagal update:", err.response || err);
-    alert("Terjadi kesalahan saat mengupdate data antrian.");
+    console.error("Gagal update:", err.response || err);
+    alert("Terjadi kesalahan saat memperbarui data antrian.");
   } finally {
     loading.value = false;
   }
+}
+
+function goToAntrian() {
+  showPopup.value = false;
+  router.push("/antrian");
 }
 
 onMounted(async () => {
@@ -182,13 +211,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* === Navbar Active === */
 .nav-link.router-link-active,
 .nav-link.router-link-exact-active {
   border-bottom: 2px solid #fff;
   font-weight: bold;
-}
-.nav-link {
-  position: relative;
 }
 .nav-link::after {
   content: "";
@@ -206,5 +233,81 @@ onMounted(async () => {
 .logo-navbar {
   height: 56px;
   width: auto;
+}
+
+/* === Tombol Custom === */
+.btn-custom {
+  background-color: #00a8e8;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  transition: all 0.2s ease-in-out;
+}
+.btn-custom:hover {
+  background-color: #0090cc;
+  transform: scale(1.03);
+}
+
+/* === POPUP (Gaya Sama Dengan Login) === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.btn-popup:hover {
+  opacity: 0.9;
+}
+
+/* === Animasi === */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

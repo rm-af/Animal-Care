@@ -92,7 +92,6 @@
                     </span>
                   </td>
                   <td>
-                    <!-- Tombol Tangani -->
                     <button
                       v-if="item.status.toLowerCase() === 'menunggu'"
                       @click="tanganiAntrian(item)"
@@ -101,7 +100,6 @@
                       Tangani
                     </button>
 
-                    <!-- Tombol Selesai -->
                     <button
                       v-else-if="item.status.toLowerCase() === 'diproses'"
                       @click="selesaiAntrian(item)"
@@ -110,10 +108,9 @@
                       Selesai
                     </button>
 
-                    <!-- Tombol Hapus -->
                     <button
                       v-else-if="item.status.toLowerCase() === 'selesai'"
-                      @click="hapusAntrian(item)"
+                      @click="konfirmasiHapus(item)"
                       class="btn btn-sm btn-danger"
                     >
                       Hapus
@@ -126,96 +123,156 @@
         </div>
       </div>
     </main>
+
+    <!-- POPUP STATUS -->
+    <transition name="fade-scale">
+      <div v-if="popup.show" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img :src="popup.image" alt="popup" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">{{ popup.title }}</h4>
+          <p class="text-muted">{{ popup.message }}</p>
+
+          <!-- Tombol konfirmasi khusus popup konfirmasi -->
+          <div v-if="popup.type === 'confirm'" class="d-flex justify-content-center gap-3 mt-3">
+            <button class="btn btn-danger fw-bold px-4" @click="hapusAntrian(popup.item)">Ya</button>
+            <button class="btn btn-secondary fw-bold px-4" @click="closePopup">Tidak</button>
+          </div>
+
+          <!-- Tombol OK untuk popup biasa -->
+          <button
+            v-else
+            class="btn btn-popup mt-3 fw-bold"
+            @click="closePopup"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import axios from 'axios'
+import { ref, onMounted } from "vue";
+import { useRouter, RouterLink } from "vue-router";
+import axios from "axios";
 
-const router = useRouter()
-const antrian = ref([])
-const loading = ref(false)
+const router = useRouter();
+const antrian = ref([]);
+const loading = ref(false);
 
-const API_ANTRIAN = 'http://127.0.0.1:8000/api/antrian'
+const API_ANTRIAN = "http://127.0.0.1:8000/api/antrian";
 
+const popup = ref({
+  show: false,
+  type: "", // confirm / info
+  title: "",
+  message: "",
+  image: "",
+  item: null,
+});
 
-const getAntrianId = (item) => item.antrianId || item.id_antrian || item.antrian_id || item.id
-
+const getAntrianId = (item) =>
+  item.antrianId || item.id_antrian || item.antrian_id || item.id;
 
 async function fetchAntrian() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await axios.get(API_ANTRIAN)
-    const data = Array.isArray(res.data) ? res.data : res.data.data
-    antrian.value = data.map(a => ({
+    const res = await axios.get(API_ANTRIAN);
+    const data = Array.isArray(res.data) ? res.data : res.data.data;
+    antrian.value = data.map((a) => ({
       ...a,
       antrianId: a.antrianId || a.id,
-      status: a.status || 'menunggu',
+      status: a.status || "menunggu",
       user: a.user || null,
       hewan: a.hewan || null,
       layanan: a.layanan || null,
-    }))
+    }));
   } catch (err) {
-    console.error('❌ Gagal mengambil data antrian:', err)
+    console.error("❌ Gagal mengambil data antrian:", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 
 async function tanganiAntrian(item) {
-  const id = getAntrianId(item)
-  if (!confirm('Tandai antrian ini sebagai "Diproses"?')) return
+  const id = getAntrianId(item);
   try {
-    await axios.post(`${API_ANTRIAN}/${id}/tangani`)
-    item.status = 'diproses'
-    alert('✅ Antrian sedang diproses.')
+    await axios.post(`${API_ANTRIAN}/${id}/tangani`);
+    item.status = "diproses";
+    popup.value = {
+      show: true,
+      type: "info",
+      image: "/proses.png",
+      title: "Antrian Sedang Diproses!",
+      message: `Pasien ${item.nama_hewan || "hewan"} sedang dalam penanganan.`,
+    };
   } catch (err) {
-    console.error('❌ Gagal memproses antrian:', err)
-    alert('Terjadi kesalahan saat memproses antrian.')
+    console.error("❌ Gagal memproses antrian:", err);
   }
 }
-
 
 async function selesaiAntrian(item) {
-  const id = getAntrianId(item)
-  if (!confirm('Apakah pasien ini sudah selesai ditangani?')) return
+  const id = getAntrianId(item);
   try {
-    await axios.post(`${API_ANTRIAN}/${id}/selesai`)
-    item.status = 'selesai'
-    alert('✅ Antrian ditandai selesai.')
+    await axios.post(`${API_ANTRIAN}/${id}/selesai`);
+    item.status = "selesai";
+    popup.value = {
+      show: true,
+      type: "info",
+      image: "/popup.png",
+      title: "Antrian Telah Selesai!",
+      message: `Penanganan pasien ${item.nama_hewan || "hewan"} telah selesai.`,
+    };
   } catch (err) {
-    console.error('❌ Gagal menyelesaikan antrian:', err)
-    alert('Terjadi kesalahan saat menyelesaikan antrian.')
+    console.error("❌ Gagal menyelesaikan antrian:", err);
   }
 }
 
+function konfirmasiHapus(item) {
+  popup.value = {
+    show: true,
+    type: "confirm",
+    image: "/cancel.png",
+    title: "Hapus Antrian?",
+    message: `Yakin ingin menghapus antrian pasien ${item.nama_hewan || "hewan"} ini?`,
+    item,
+  };
+}
 
 async function hapusAntrian(item) {
-  const id = getAntrianId(item)
-  if (!confirm('Yakin ingin menghapus data antrian ini?')) return
+  const id = getAntrianId(item);
   try {
-    await axios.delete(`${API_ANTRIAN}/${id}/hapus-admin`)
-    antrian.value = antrian.value.filter(a => getAntrianId(a) !== id)
-    alert('🗑️ Data antrian berhasil dihapus.')
+    await axios.delete(`${API_ANTRIAN}/${id}/hapus-admin`);
+    antrian.value = antrian.value.filter((a) => getAntrianId(a) !== id);
+    popup.value = {
+      show: true,
+      type: "info",
+      image: "/popup.png",
+      title: "Berhasil Dihapus!",
+      message: `Antrian pasien ${item.nama_hewan || "hewan"} telah dihapus.`,
+    };
   } catch (err) {
-    console.error('❌ Gagal menghapus antrian:', err)
-    alert('Terjadi kesalahan saat menghapus data antrian.')
+    console.error("❌ Gagal menghapus antrian:", err);
   }
 }
 
+function closePopup() {
+  popup.value.show = false;
+}
 
 function logout() {
-  if (confirm('Yakin ingin logout?')) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/login')
-  }
+  popup.value = {
+    show: true,
+    type: "confirm",
+    image: "/cancel.png",
+    title: "Konfirmasi Logout",
+    message: "Yakin ingin keluar dari akun admin?",
+    item: { logout: true },
+  };
 }
 
-onMounted(fetchAntrian)
+onMounted(fetchAntrian);
 </script>
 
 <style scoped>
@@ -250,5 +307,60 @@ onMounted(fetchAntrian)
 }
 .btn {
   font-weight: 600;
+}
+
+/* === POPUP === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+.btn-popup:hover {
+  opacity: 0.9;
+}
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

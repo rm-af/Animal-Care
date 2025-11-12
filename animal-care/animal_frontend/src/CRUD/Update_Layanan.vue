@@ -47,6 +47,18 @@
         {{ submitting ? 'Menyimpan...' : 'Update Layanan' }}
       </button>
     </form>
+
+    <!-- POPUP SUKSES (sama seperti update antrian) -->
+    <transition name="fade-scale">
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img src="/popup.png" alt="success" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">Layanan Berhasil Diperbarui!</h4>
+          <p class="text-muted">Perubahan data layanan telah disimpan dengan sukses.</p>
+          <button class="btn btn-popup mt-3 fw-bold" @click="goToLayanan">Lihat Layanan</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -65,7 +77,7 @@ const deskripsi = ref('')
 const fileLogo = ref(null)
 const previewLogo = ref(null)
 const submitting = ref(false)
-
+const showPopup = ref(false)
 
 async function fetchDetail() {
   try {
@@ -82,7 +94,6 @@ async function fetchDetail() {
   }
 }
 
-
 function onFileChange(e) {
   const file = e.target.files[0]
   if (file) {
@@ -90,7 +101,6 @@ function onFileChange(e) {
     previewLogo.value = URL.createObjectURL(file)
   }
 }
-
 
 async function updateLayanan() {
   submitting.value = true
@@ -100,13 +110,12 @@ async function updateLayanan() {
     formData.append('deskripsi', deskripsi.value)
     if (fileLogo.value) formData.append('logo', fileLogo.value)
 
-    const res = await axios.post(`${API_BASE}/layanan/${id}`, formData, {
+    await axios.post(`${API_BASE}/layanan/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
 
-    console.log('✅ Respons backend:', res.data)
-    alert('✅ Layanan berhasil diperbarui!')
-    router.push('/layanan')
+    // tampilkan popup
+    showPopup.value = true
   } catch (err) {
     console.error('❌ Gagal update layanan:', err.response?.data || err.message)
     alert(`❌ Gagal memperbarui layanan: ${err.response?.data?.message || err.message}`)
@@ -115,11 +124,79 @@ async function updateLayanan() {
   }
 }
 
+function goToLayanan() {
+  showPopup.value = false
+  router.push('/layanan')
+}
+
 onMounted(fetchDetail)
 </script>
 
 <style scoped>
 .container {
   max-width: 600px;
+}
+
+/* === POPUP === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.btn-popup:hover {
+  opacity: 0.9;
+}
+
+/* === Animasi === */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

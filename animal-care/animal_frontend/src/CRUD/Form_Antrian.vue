@@ -52,7 +52,6 @@
     >
       <div class="container">
         <div class="row align-items-center">
-
           <div class="col-md-6 text-white mb-4 mb-md-0">
             <h2 class="fw-bold display-5 mb-4">Form Antrian</h2>
             <p class="text-light fs-5 lh-lg" style="max-width: 480px;">
@@ -60,7 +59,6 @@
               hewan peliharaan Anda.
             </p>
           </div>
-
 
           <div class="col-md-6 d-flex justify-content-center">
             <div
@@ -148,6 +146,18 @@
         </div>
       </div>
     </section>
+
+    <!-- POPUP ALERT -->
+    <transition name="fade-scale">
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img src="/popup.png" alt="success" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">Antrian Berhasil Terkirim!</h4>
+          <p class="text-muted">Data antrian Anda telah berhasil dikirim ke sistem.</p>
+          <button class="btn btn-popup mt-3 fw-bold" @click="closePopup">Continue</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -159,6 +169,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const isLoggedIn = ref(!!localStorage.getItem("token"));
 const loading = ref(false);
+const showPopup = ref(false);
 
 const form = ref({
   nama_hewan: "",
@@ -171,15 +182,12 @@ const form = ref({
 const jenisHewanList = ref([]);
 const layananList = ref([]);
 
-
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   isLoggedIn.value = false;
-  alert("Anda telah logout.");
   router.push("/login");
 }
-
 
 async function fetchDropdownData() {
   try {
@@ -187,14 +195,12 @@ async function fetchDropdownData() {
       axios.get("http://127.0.0.1:8000/api/hewan"),
       axios.get("http://127.0.0.1:8000/api/layanan"),
     ]);
-
     jenisHewanList.value = resHewan.data.data || resHewan.data;
     layananList.value = resLayanan.data.data || resLayanan.data;
   } catch (err) {
     console.error("Gagal mengambil data dropdown:", err);
   }
 }
-
 
 async function submitForm() {
   const token = localStorage.getItem("token");
@@ -227,8 +233,6 @@ async function submitForm() {
       no_hp: form.value.no_hp,
     };
 
-    console.log("Payload dikirim:", payload);
-
     const res = await axios.post("http://127.0.0.1:8000/api/antrian", payload, {
       headers: {
         "Content-Type": "application/json",
@@ -237,12 +241,9 @@ async function submitForm() {
     });
 
     if (res.status === 200 || res.status === 201) {
-      alert("✅ Antrian berhasil ditambahkan!");
-
-      
-      res.data.data.user = { name: user.name };
-
-      router.push("/antrian");
+      showPopup.value = true;
+      // reset form
+      form.value = { nama_hewan: "", hewanId: "", layananId: "", keluhan: "", no_hp: "" };
     }
   } catch (err) {
     console.error("Gagal menambahkan antrian:", err.response || err);
@@ -255,6 +256,11 @@ async function submitForm() {
   } finally {
     loading.value = false;
   }
+}
+
+function closePopup() {
+  showPopup.value = false;
+  router.push("/antrian");
 }
 
 onMounted(() => {
@@ -290,5 +296,68 @@ onMounted(() => {
 .logo-navbar {
   height: 56px;
   width: auto;
+}
+
+/* === POPUP STYLE === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.btn-popup:hover {
+  opacity: 0.9;
+}
+
+/* === ANIMATIONS === */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
