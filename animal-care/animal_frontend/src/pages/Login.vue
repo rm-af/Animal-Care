@@ -123,6 +123,9 @@ export default {
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("token", token);
 
+        localStorage.setItem("justLoggedIn", "true");
+
+
         // Tampilkan popup sukses
         this.showPopup = true;
 

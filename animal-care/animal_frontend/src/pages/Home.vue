@@ -231,13 +231,18 @@ export default {
       this.fetchHewan();
     }, 10000);
 
-    if (this.isLoggedIn) {
-      this.showWelcome = true;
-      setTimeout(() => (this.showWelcome = false), 3500);
-    }
+    if (localStorage.getItem("justLoggedIn") === "true") {
+    this.showWelcome = true;
 
-    this.startTyping();
-  },
+    setTimeout(() => {
+      this.showWelcome = false;
+    }, 3500);
+
+    localStorage.removeItem("justLoggedIn"); 
+  }
+
+  this.startTyping();
+},
   beforeUnmount() {
     window.removeEventListener("scroll", this.handleScroll);
     clearInterval(this.refreshInterval);
