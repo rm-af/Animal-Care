@@ -1,5 +1,4 @@
 <template>
-  
   <div
     class="container-fluid vh-100 d-flex align-items-center justify-content-center text-white"
     style="background-color: #5b6ef5; padding-top: 80px;"
@@ -67,6 +66,18 @@
         </div>
       </div>
     </div>
+
+    <!-- POPUP ALERT -->
+    <transition name="fade-scale">
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img src="/popup.png" alt="success" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">Registrasi berhasil!</h4>
+          <p class="text-muted">Akun Anda telah berhasil dibuat.</p>
+          <button class="btn btn-popup mt-3 fw-bold" @click="closePopup">Continue</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -83,32 +94,33 @@ export default {
         email: "",
         password: "",
       },
+      showPopup: false,
     };
   },
   methods: {
     async handleSubmit() {
       try {
-
         const response = await axios.post("http://127.0.0.1:8000/api/register", this.form);
 
-        alert(response.data.message || "Registrasi berhasil!");
+        // Tampilkan popup sukses
+        this.showPopup = true;
 
-
+        // Reset form
         this.form.username = "";
         this.form.role = "";
         this.form.email = "";
         this.form.password = "";
-
-
-        this.$router.push("/login");
       } catch (error) {
         if (error.response) {
-
           alert(error.response.data.message || "Gagal registrasi!");
         } else {
           alert("Tidak dapat terhubung ke server.");
         }
       }
+    },
+    closePopup() {
+      this.showPopup = false;
+      this.$router.push("/login");
     },
   },
 };
@@ -129,5 +141,71 @@ export default {
 .logo-navbar {
   height: 56px;
   width: auto;
+}
+
+/* === POPUP STYLE === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.popup-card {
+  background: #fff;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.popup-img {
+  width: 160px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  transition: 0.3s;
+}
+
+.btn-popup:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* === ANIMATIONS === */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

@@ -74,6 +74,18 @@
         </div>
       </div>
     </div>
+
+    <!-- POPUP ALERT -->
+    <transition name="fade-scale">
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img src="/popup.png" alt="success" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">Login Berhasil!</h4>
+          <p class="text-muted">Selamat datang kembali di Animal Care.</p>
+          <button class="btn btn-popup mt-3 fw-bold" @click="closePopup">Continue</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -90,6 +102,7 @@ export default {
       },
       loading: false,
       errorMessage: "",
+      showPopup: false, // popup
     };
   },
   methods: {
@@ -99,7 +112,6 @@ export default {
 
       try {
         const response = await axios.post("http://127.0.0.1:8000/api/login", this.form);
-
         const user = response.data.user;
         const token = response.data.access_token;
 
@@ -111,8 +123,7 @@ export default {
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("token", token);
 
-        alert(`✅ Login berhasil sebagai ${user.role}!`);
-        console.log("User login:", user);
+        localStorage.setItem("justLoggedIn", "true");
 
         // Redirect sesuai role
         if (user.role === "Admin") {
@@ -120,12 +131,29 @@ export default {
         } else {
           this.$router.push("/home");
         }
+
+        // Tampilkan popup sukses
+        this.showPopup = true;
+
+        // Reset form
+        this.form.email = "";
+        this.form.password = "";
       } catch (error) {
         console.error("Error saat login:", error.response?.data || error.message);
         this.errorMessage =
           error.response?.data?.message || "Email atau password salah!";
       } finally {
         this.loading = false;
+      }
+    },
+    closePopup() {
+      this.showPopup = false;
+
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user && user.role === "Admin") {
+        this.$router.push("/dasboard");
+      } else {
+        this.$router.push("/home");
       }
     },
   },
@@ -147,5 +175,68 @@ export default {
 .logo-navbar {
   height: 56px;
   width: auto;
+}
+
+/* === POPUP STYLE === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.btn-popup:hover {
+  opacity: 0.9;
+}
+
+/* === ANIMATIONS === */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

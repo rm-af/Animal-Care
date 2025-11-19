@@ -86,7 +86,11 @@
               ></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 fw-semibold" :disabled="submitting">
+            <button
+              type="submit"
+              class="btn btn-primary w-100 fw-semibold"
+              :disabled="submitting"
+            >
               <i class="ri-add-line me-2"></i> Tambah
             </button>
           </form>
@@ -104,7 +108,10 @@
             <i class="ri-loader-4-line ri-spin me-2"></i> Memuat data...
           </div>
 
-          <div v-else-if="layananList.length === 0" class="text-center text-muted py-3">
+          <div
+            v-else-if="layananList.length === 0"
+            class="text-center text-muted py-3"
+          >
             <i class="ri-information-line me-2"></i> Belum ada layanan.
           </div>
 
@@ -120,7 +127,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in layananList" :key="item.layananId">
+                <tr
+                  v-for="(item, index) in layananList"
+                  :key="item.layananId"
+                >
                   <td>{{ index + 1 }}</td>
                   <td>
                     <img
@@ -135,11 +145,16 @@
                   <td>{{ item.nama_layanan }}</td>
                   <td>{{ item.deskripsi }}</td>
                   <td>
-                    <!-- Tombol Edit diarahkan ke halaman update -->
-                    <button @click="goToUpdate(item.layananId)" class="btn btn-sm btn-warning me-2">
+                    <button
+                      @click="goToUpdate(item.layananId)"
+                      class="btn btn-sm btn-warning me-2"
+                    >
                       <i class="ri-edit-2-line"></i>
                     </button>
-                    <button @click="hapusLayanan(item.layananId)" class="btn btn-sm btn-danger">
+                    <button
+                      @click="konfirmasiHapus(item)"
+                      class="btn btn-sm btn-danger"
+                    >
                       <i class="ri-delete-bin-6-line"></i>
                     </button>
                   </td>
@@ -150,113 +165,183 @@
         </div>
       </div>
     </main>
+
+    <!-- POPUP -->
+    <transition name="fade-scale">
+      <div v-if="popup.show" class="popup-overlay">
+        <div class="popup-card text-center p-4 rounded-4 shadow-lg">
+          <img :src="popup.image" alt="popup" class="popup-img mb-3" />
+          <h4 class="fw-bold mb-2">{{ popup.title }}</h4>
+          <p class="text-muted">{{ popup.message }}</p>
+
+          <!-- Tombol konfirmasi -->
+          <div
+            v-if="popup.type === 'confirm'"
+            class="d-flex justify-content-center gap-3 mt-3"
+          >
+            <button
+              class="btn btn-danger fw-bold px-4"
+              @click="hapusLayanan(popup.item)"
+            >
+              Ya
+            </button>
+            <button
+              class="btn btn-secondary fw-bold px-4"
+              @click="closePopup"
+            >
+              Tidak
+            </button>
+          </div>
+
+          <!-- Tombol OK -->
+          <button
+            v-else
+            class="btn btn-popup mt-3 fw-bold"
+            @click="closePopup"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { RouterLink, useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
+const namaLayanan = ref("");
+const deskripsi = ref("");
+const fileLogo = ref(null);
+const previewLogo = ref(null);
+const layananList = ref([]);
+const loading = ref(false);
+const submitting = ref(false);
 
-const namaLayanan = ref('')
-const deskripsi = ref('')
-const fileLogo = ref(null)
-const previewLogo = ref(null)
-const layananList = ref([])
-const loading = ref(false)
-const submitting = ref(false)
+const API_LAYANAN = "http://127.0.0.1:8000/api/layanan";
 
-const API_LAYANAN = 'http://127.0.0.1:8000/api/layanan'
-
-
+const popup = ref({
+  show: false,
+  type: "",
+  title: "",
+  message: "",
+  image: "",
+  item: null,
+});
 
 function getImageUrl(path) {
-  if (!path) return '/no-image.png'
-  if (path.startsWith('http')) return path
-  return `http://127.0.0.1:8000/storage/${path}`
+  if (!path) return "/no-image.png";
+  if (path.startsWith("http")) return path;
+  return `http://127.0.0.1:8000/storage/${path}`;
 }
 
 function onFileChange(e) {
-  const file = e.target.files[0]
+  const file = e.target.files[0];
   if (file) {
-    fileLogo.value = file
-    previewLogo.value = URL.createObjectURL(file)
+    fileLogo.value = file;
+    previewLogo.value = URL.createObjectURL(file);
   }
 }
 
 async function fetchLayanan() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await axios.get(API_LAYANAN)
-    layananList.value = Array.isArray(res.data) ? res.data : res.data.data || []
+    const res = await axios.get(API_LAYANAN);
+    layananList.value = Array.isArray(res.data)
+      ? res.data
+      : res.data.data || [];
   } catch (err) {
-    console.error('❌ Gagal ambil data layanan:', err)
-    alert('Gagal memuat data layanan. Cek console untuk detail.')
+    console.error("❌ Gagal ambil data layanan:", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function tambahLayanan() {
-  submitting.value = true
+  submitting.value = true;
   try {
-    const formData = new FormData()
-    formData.append('nama_layanan', namaLayanan.value)
-    formData.append('deskripsi', deskripsi.value)
-    if (fileLogo.value) formData.append('logo', fileLogo.value)
+    const formData = new FormData();
+    formData.append("nama_layanan", namaLayanan.value);
+    formData.append("deskripsi", deskripsi.value);
+    if (fileLogo.value) formData.append("logo", fileLogo.value);
 
     await axios.post(API_LAYANAN, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-    alert('✅ Layanan berhasil ditambahkan!')
-    resetForm()
-    fetchLayanan()
+    popup.value = {
+      show: true,
+      type: "info",
+      image: "/popup.png",
+      title: "Layanan Berhasil Ditambahkan!",
+      message: `Layanan ${namaLayanan.value} telah disimpan.`,
+    };
+    resetForm();
+    fetchLayanan();
   } catch (err) {
-    console.error('Tambah error:', err)
-    alert('❌ Gagal menambahkan layanan. ' + (err.response?.data?.message || ''))
+    console.error("❌ Gagal tambah layanan:", err);
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
 }
 
+function konfirmasiHapus(item) {
+  popup.value = {
+    show: true,
+    type: "confirm",
+    image: "/cancel.png",
+    title: "Hapus Layanan?",
+    message: `Yakin ingin menghapus layanan "${item.nama_layanan}"?`,
+    item,
+  };
+}
+
+async function hapusLayanan(item) {
+  try {
+    await axios.delete(`${API_LAYANAN}/${item.layananId}`);
+    popup.value = {
+      show: true,
+      type: "info",
+      image: "/popup.png",
+      title: "Berhasil Dihapus!",
+      message: `Layanan "${item.nama_layanan}" telah dihapus.`,
+    };
+    fetchLayanan();
+  } catch (err) {
+    console.error("❌ Gagal hapus layanan:", err);
+  }
+}
+
+function closePopup() {
+  popup.value.show = false;
+}
 
 function goToUpdate(id) {
-  router.push(`/update_layanan/${id}`)
-}
-
-async function hapusLayanan(id) {
-  if (!id) return alert('ID layanan tidak ditemukan!')
-  if (!confirm('Yakin ingin menghapus layanan ini?')) return
-  try {
-    await axios.delete(`${API_LAYANAN}/${id}`)
-    alert('✅ Layanan berhasil dihapus!')
-    fetchLayanan()
-  } catch (err) {
-    console.error('Hapus error:', err)
-    alert('❌ Gagal menghapus layanan. ' + (err.response?.data?.message || ''))
-  }
+  router.push(`/update_layanan/${id}`);
 }
 
 function logout() {
-  if (confirm('Yakin ingin logout?')) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/login')
-  }
+  popup.value = {
+    show: true,
+    type: "confirm",
+    image: "/cancel.png",
+    title: "Konfirmasi Logout",
+    message: "Yakin ingin keluar dari akun admin?",
+    item: { logout: true },
+  };
 }
 
 function resetForm() {
-  namaLayanan.value = ''
-  deskripsi.value = ''
-  fileLogo.value = null
-  previewLogo.value = null
-  submitting.value = false
+  namaLayanan.value = "";
+  deskripsi.value = "";
+  fileLogo.value = null;
+  previewLogo.value = null;
 }
 
-onMounted(fetchLayanan)
+onMounted(fetchLayanan);
 </script>
 
 <style scoped>
@@ -275,9 +360,6 @@ onMounted(fetchLayanan)
   display: flex;
   align-items: center;
 }
-.nav-link i {
-  font-size: 18px;
-}
 .nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
 }
@@ -289,9 +371,6 @@ onMounted(fetchLayanan)
   text-align: center;
   vertical-align: middle;
 }
-.btn-danger {
-  font-weight: 600;
-}
 .form-card {
   max-width: 500px;
 }
@@ -299,5 +378,60 @@ onMounted(fetchLayanan)
   width: 100px;
   height: 100px;
   object-fit: cover;
+}
+
+/* === POPUP STYLE SAMA SEPERTI ANTRIAN === */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.popup-card {
+  background: white;
+  color: #000;
+  width: 360px;
+  animation: scaleIn 0.4s ease forwards;
+}
+.popup-img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.btn-popup {
+  background: linear-gradient(to right, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+.btn-popup:hover {
+  opacity: 0.9;
+}
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('email', 100);
             $table->string('password', 255); // ubah ke 255 agar cukup untuk hash bcrypt
             $table->timestamps(); // 🟢 tambahkan ini
+            $table->string('password', 255);
+            $table->timestamps();
+
         });
     }
 

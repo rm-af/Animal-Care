@@ -1,5 +1,6 @@
 <template>
   <div class="d-flex min-vh-100 bg-light">
+
     <!-- SIDEBAR -->
     <aside class="sidebar d-flex flex-column p-3 text-white">
       <div class="text-center mb-4">
@@ -37,7 +38,18 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow-1 p-4">
-      <h3 class="fw-bold mb-4">Dashboard Admin</h3>
+
+      
+      <transition name="notif-slide">
+        <div v-if="showPopup" class="notif-container">
+          <div class="notif-box">
+            <div class="notif-title">Halo {{ username }}</div>
+            <div class="notif-msg">Selamat datang kembali di Dashboard Admin.</div>
+          </div>
+        </div>
+      </transition>
+
+      <h3 class="fw-bold mb-4">Selamat datang, {{ username }}!</h3>
 
       <!-- CARD STATISTIK -->
       <div class="row g-3 mb-4">
@@ -72,7 +84,6 @@
         </div>
       </div>
 
-      
       <div class="mb-3">
         <span class="badge bg-primary text-white p-2">
           History (Selesai): {{ history.length }} data
@@ -115,6 +126,7 @@
           </div>
         </div>
       </div>
+
     </main>
   </div>
 </template>
@@ -133,8 +145,19 @@ const totalPasien = ref(0)
 const sudahDitangani = ref(0)
 const belumDitangani = ref(0)
 
-const API_ANTRIAN = 'http://localhost:8000/api/antrian'
+const username = ref('Admin')
+const showPopup = ref(false)
 
+const userData = localStorage.getItem('user')
+if (userData) {
+  try {
+    username.value = JSON.parse(userData).username || 'Admin'
+  } catch (e) {
+    console.error("Parse user gagal:", e)
+  }
+}
+
+const API_ANTRIAN = 'http://localhost:8000/api/antrian'
 
 function logout() {
   if (confirm('Yakin ingin logout?')) {
@@ -144,34 +167,42 @@ function logout() {
   }
 }
 
-
 async function fetchData() {
   loading.value = true
   try {
     const res = await axios.get(API_ANTRIAN)
     const data = Array.isArray(res.data) ? res.data : res.data.data || []
+
     antrianData.value = data
-
-
     const menunggu = data.filter(a => (a.status || '').toLowerCase() === 'menunggu')
     const diproses = data.filter(a => (a.status || '').toLowerCase() === 'diproses')
     const selesai = data.filter(a => (a.status || '').toLowerCase() === 'selesai')
 
-
     totalPasien.value = data.length
     sudahDitangani.value = diproses.length + selesai.length
     belumDitangani.value = menunggu.length
-
-    // History = antrian yang sudah selesai
     history.value = selesai.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+
   } catch (err) {
-    console.error('❌ Gagal fetch data dashboard:', err)
+    console.error('Gagal fetch dashboard:', err)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  fetchData()
+
+  if (localStorage.getItem('justLoggedIn') === 'true') {
+    showPopup.value = true
+
+    setTimeout(() => {
+      showPopup.value = false
+    }, 2800)
+
+    localStorage.removeItem('justLoggedIn')
+  }
+})
 </script>
 
 <style scoped>
@@ -180,11 +211,64 @@ onMounted(fetchData)
 .nav-link { color: white; padding: 10px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px; }
 .nav-link.active { background-color: rgba(255,255,255,0.2); }
 .nav-link:hover { background-color: rgba(255,255,255,0.15); }
+
 .dashboard-card { display: flex; align-items: center; border-radius: 10px; padding: 20px; height: 110px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); transition: 0.3s ease; }
 .dashboard-card:hover { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
 .icon-circle { width: 65px; height: 65px; border-radius: 50%; background-color: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; margin-right: 15px; }
 .icon-circle i { font-size: 32px; color: #fff; }
-.card-text h6 { font-size: 16px; }
-.card-text h2 { font-size: 32px; margin: 0; }
-.table th, .table td { text-align: center; vertical-align: middle; }
+
+/* ==================== NOTIFIKASI GAYA WHATSAPP ==================== */
+.notif-container {
+  position: fixed;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+}
+
+.notif-box {
+  background: #fff;
+  width: 330px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow:
+    0px 4px 14px rgba(0, 0, 0, 0.18),
+    0px 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+}
+
+.notif-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.notif-msg {
+  font-size: 13px;
+  color: #555;
+}
+
+/* === ANIMASI === */
+.notif-slide-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -80px);
+}
+.notif-slide-enter-to {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.notif-slide-leave-from {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.notif-slide-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -80px);
+}
+
+.notif-slide-enter-active,
+.notif-slide-leave-active {
+  transition: all .38s cubic-bezier(0.25, 1, 0.5, 1);
+}
 </style>
