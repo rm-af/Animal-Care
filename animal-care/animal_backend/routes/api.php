@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AUTH\AuthController;
 use App\Http\Controllers\HewanController;
 use App\Http\Controllers\LayananController;
+use App\Http\Controllers\PaymentController;
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -48,3 +50,4 @@ Route::get('/layanan/{id}', [LayananController::class, 'show']);
 Route::post('/layanan/{id}', [LayananController::class, 'update']);
 Route::delete('/layanan/{id}', [LayananController::class, 'destroy']);
 
+Route::post('/payment', [PaymentController::class, 'createTransaction']);

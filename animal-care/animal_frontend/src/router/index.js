@@ -14,6 +14,9 @@ import Update_Antrian from '@/CRUD/Update_Antrian.vue'
 import Update_Layanan from '@/CRUD/Update_Layanan.vue'
 import Update_Hewan from '@/CRUD/Update_Hewan.vue'
 
+// =============== Import Halaman Pembayaran ===============
+import PaymentPage from '@/pages/PaymentPage.vue'
+
 // =============== Daftar Route ===============
 const routes = [
   // Default route — langsung redirect ke /login
@@ -40,6 +43,14 @@ const routes = [
     path: '/form_antrian',
     name: 'Form_Antrian',
     component: Form_Antrian,
+    meta: { requiresAuth: true, role: 'User' },
+  },
+
+  // =============== Halaman Pembayaran (MIDTRANS) ===============
+  {
+    path: '/payment',
+    name: 'Payment',
+    component: PaymentPage,
     meta: { requiresAuth: true, role: 'User' },
   },
 
