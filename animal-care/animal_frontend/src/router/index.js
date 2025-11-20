@@ -13,9 +13,9 @@ import Hewan from '@/pages/role_admin/Hewan.vue'
 import Update_Antrian from '@/CRUD/Update_Antrian.vue'
 import Update_Layanan from '@/CRUD/Update_Layanan.vue'
 import Update_Hewan from '@/CRUD/Update_Hewan.vue'
-
-// =============== Import Halaman Pembayaran ===============
 import PaymentPage from '@/pages/PaymentPage.vue'
+
+
 
 // =============== Daftar Route ===============
 const routes = [
@@ -48,7 +48,7 @@ const routes = [
 
   // =============== Halaman Pembayaran (MIDTRANS) ===============
   {
-    path: '/payment',
+    path: '/payment/:id',
     name: 'Payment',
     component: PaymentPage,
     meta: { requiresAuth: true, role: 'User' },

@@ -10,16 +10,14 @@ class PaymentController extends Controller
 {
     public function createTransaction(Request $request)
     {
-        // Set Midtrans Config
+        // Load config dari config/midtrans.php
         Config::$serverKey = config('midtrans.server_key');
         Config::$isProduction = config('midtrans.is_production');
         Config::$isSanitized = config('midtrans.is_sanitized');
         Config::$is3ds = config('midtrans.is_3ds');
 
-        // Contoh: ambil total harga dari request
         $amount = $request->amount;
 
-        // Order ID unik
         $orderId = 'ORDER-' . time();
 
         $params = [
@@ -33,7 +31,6 @@ class PaymentController extends Controller
             ]
         ];
 
-        // Dapatkan Snap Token
         $snapToken = Snap::getSnapToken($params);
 
         return response()->json([

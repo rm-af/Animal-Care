@@ -1,17 +1,21 @@
 <template>
   <div class="payment-container">
-    <h2>Pembayaran</h2>
+    <h2 class="title">Pembayaran QRIS</h2>
 
-    <input 
-      type="number" 
-      v-model="amount" 
-      placeholder="Masukkan jumlah pembayaran"
-      class="input"
-    />
+    <div class="card">
+      <label class="label">Jumlah Pembayaran (Rp)</label>
+      <input
+        type="number"
+        v-model="amount"
+        placeholder="Contoh: 25000"
+        class="input"
+      />
 
-    <button @click="payNow" class="pay-btn">
-      Bayar Sekarang
-    </button>
+      <button @click="payNow" :disabled="loading" class="pay-btn">
+        <span v-if="!loading">Bayar Sekarang</span>
+        <span v-else>Memproses...</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -20,68 +24,118 @@ import axios from "axios";
 
 export default {
   name: "PaymentPage",
+
   data() {
     return {
-      amount: 0,
+      amount: "",
+      loading: false,
     };
   },
+
+  mounted() {
+    // Inject Snap JS
+    const script = document.createElement("script");
+    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
+    script.setAttribute("data-client-key", "Mid-client-Z2zhCv8v5_sbiKsW");
+    document.body.appendChild(script);
+  },
+
   methods: {
     async payNow() {
+      if (!this.amount || this.amount < 1000) {
+        alert("Masukkan nominal yang valid (minimal 1000)");
+        return;
+      }
+
+      this.loading = true;
+
       try {
-        const res = await axios.post("http://127.0.0.1:8000/payment", {
+        const response = await axios.post("http://127.0.0.1:8000/api/payment", {
           amount: this.amount,
+          method: "qris",
         });
 
-        const snapToken = res.data.snapToken;
+        const snapToken = response.data.snapToken;
 
         window.snap.pay(snapToken, {
           onSuccess: (result) => {
-            console.log("Success:", result);
-            alert("Pembayaran berhasil!");
+            console.log(result);
+            alert("Pembayaran berhasil! 🎉");
           },
           onPending: (result) => {
-            console.log("Pending:", result);
-            alert("Pembayaran pending.");
+            console.log(result);
+            alert("Menunggu pembayaran...");
           },
           onError: (result) => {
-            console.log("Error:", result);
+            console.error(result);
             alert("Pembayaran gagal.");
           },
           onClose: () => {
-            alert("Anda menutup popup tanpa menyelesaikan pembayaran.");
+            alert("Anda menutup pembayaran sebelum selesai.");
           },
         });
-
-      } catch (error) {
-        console.error("Gagal membuat transaksi:", error);
+      } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan membuat transaksi");
       }
-    }
-  }
+
+      this.loading = false;
+    },
+  },
 };
 </script>
 
-<style>
+<style scoped>
 .payment-container {
-  max-width: 400px;
+  max-width: 450px;
   margin: 40px auto;
+  padding: 15px;
+}
+
+.title {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.card {
+  padding: 20px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
 }
 
 .input {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
 }
 
 .pay-btn {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  border: none;
-  color: white;
-  cursor: pointer;
   width: 100%;
+  padding: 12px;
+  border: none;
+  background: #5b6ef5;
+  color: white;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.pay-btn:disabled {
+  background: #9ea7ff;
+  cursor: not-allowed;
 }
 
 .pay-btn:hover {
-  background-color: #45a049;
+  background: #4b5ed9;
 }
 </style>

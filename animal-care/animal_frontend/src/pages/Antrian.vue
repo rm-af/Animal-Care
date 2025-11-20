@@ -95,7 +95,12 @@
                     {{ item.status || '-' }}
                   </span>
                 </td>
+
+                <!-- ======================== -->
+                <!-- 🔥 A K S I  D I P E R B A R U I -->
+                <!-- ======================== -->
                 <td>
+                  <!-- STATUS MENUNGGU -->
                   <template v-if="item.status?.toLowerCase() === 'menunggu'">
                     <router-link
                       :to="{ name: 'Update_Antrian', params: { id: item.antrianId } }"
@@ -111,8 +116,29 @@
                       @click="showDeletePopup(item.antrianId)"
                     ></i>
                   </template>
-                  <span v-else class="text-muted small fst-italic">Tidak tersedia</span>
+
+                  <!-- STATUS SUDAH SELESAI & BELUM BAYAR -->
+                  <template
+                    v-else-if="item.status?.toLowerCase() === 'selesai' && item.status_pembayaran !== 'sukses'"
+                  >
+                    <button class="btn btn-primary btn-sm" @click="goToPayment(item.antrianId)">
+                      Bayar
+                    </button>
+                  </template>
+
+                  <!-- STATUS SELESAI & SUDAH BAYAR -->
+                  <template
+                    v-else-if="item.status?.toLowerCase() === 'selesai' && item.status_pembayaran === 'sukses'"
+                  >
+                    <span class="badge bg-success text-white">Lunas</span>
+                  </template>
+
+                  <!-- STATUS DIPROSES -->
+                  <template v-else>
+                    <span class="text-muted small fst-italic">Tidak tersedia</span>
+                  </template>
                 </td>
+
               </tr>
 
               <tr v-if="antrian.length === 0">
@@ -126,7 +152,7 @@
       </div>
     </section>
 
-    <!-- ✅ Popup Batalkan Antrian -->
+    <!-- Popup Batalkan -->
     <div v-if="popupVisible" class="popup-overlay">
       <div class="popup-card">
         <img src="/cancel.png" alt="Cancel Icon" class="popup-icon" />
@@ -139,7 +165,7 @@
       </div>
     </div>
 
-    <!-- ✅ Popup Sukses -->
+    <!-- Popup Sukses -->
     <div v-if="successPopup" class="popup-overlay">
       <div class="popup-card">
         <img src="/popup.png" alt="Success Icon" class="popup-icon" />
@@ -181,6 +207,7 @@ export default {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await axios.get("http://127.0.0.1:8000/api/antrian", { headers });
+
         const user = JSON.parse(localStorage.getItem("user"));
         const userId = user?.id || user?.userId;
 
@@ -243,6 +270,11 @@ export default {
       this.isLoggedIn = false;
       alert("Berhasil logout!");
       this.$router.push("/login");
+    },
+
+    // 🔥 METHOD BARU UNTUK MIDTRANS
+    goToPayment(id) {
+      this.$router.push(`/payment/${id}`);
     },
   },
 };
@@ -327,7 +359,7 @@ export default {
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
 }
 
-/* === Popup Style === */
+/* Popup */
 .popup-overlay {
   position: fixed;
   top: 0;
