@@ -1,20 +1,35 @@
 <template>
-  <div class="payment-container">
-    <h2 class="title">Pembayaran QRIS</h2>
-
+  <div class="wrapper">
     <div class="card">
-      <label class="label">Jumlah Pembayaran (Rp)</label>
-      <input
-        type="number"
-        v-model="amount"
-        placeholder="Contoh: 25000"
-        class="input"
-      />
 
-      <button @click="payNow" :disabled="loading" class="pay-btn">
-        <span v-if="!loading">Bayar Sekarang</span>
-        <span v-else>Memproses...</span>
-      </button>
+      <!-- LOGO + BRAND -->
+      <div class="brand">
+        <img src="/animal.png" alt="logo" class="logo" />
+        <h5 class="title-brand">
+          Animal <span class="highlight">Care</span>
+        </h5>
+      </div>
+
+      <h2 class="payment-title">Pembayaran QRIS</h2>
+
+      <div class="form">
+        <label>Jumlah Pembayaran (Rp)</label>
+
+        <input
+          v-model="amount"
+          type="number"
+          placeholder="Masukkan nominal"
+        />
+
+        <button
+          @click="payNow"
+          :disabled="loading"
+        >
+          <span v-if="!loading">Bayar Sekarang</span>
+          <span v-else>Memproses...</span>
+        </button>
+      </div>
+
     </div>
   </div>
 </template>
@@ -33,17 +48,16 @@ export default {
   },
 
   mounted() {
-    // Inject Snap JS
-    const script = document.createElement("script");
-    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute("data-client-key", "Mid-client-Z2zhCv8v5_sbiKsW");
-    document.body.appendChild(script);
+    const snap = document.createElement("script");
+    snap.src = "https://app.sandbox.midtrans.com/snap/snap.js";
+    snap.setAttribute("data-client-key", "Mid-client-Z2zhCv8v5_sbiKsW");
+    document.body.appendChild(snap);
   },
 
   methods: {
     async payNow() {
       if (!this.amount || this.amount < 1000) {
-        alert("Masukkan nominal yang valid (minimal 1000)");
+        alert("Minimal pembayaran adalah 1000");
         return;
       }
 
@@ -55,28 +69,18 @@ export default {
           method: "qris",
         });
 
-        const snapToken = response.data.snapToken;
+        const token = response.data.snapToken;
 
-        window.snap.pay(snapToken, {
-          onSuccess: (result) => {
-            console.log(result);
-            alert("Pembayaran berhasil! 🎉");
-          },
-          onPending: (result) => {
-            console.log(result);
-            alert("Menunggu pembayaran...");
-          },
-          onError: (result) => {
-            console.error(result);
-            alert("Pembayaran gagal.");
-          },
-          onClose: () => {
-            alert("Anda menutup pembayaran sebelum selesai.");
-          },
+        window.snap.pay(token, {
+          onSuccess: () => alert("Pembayaran berhasil!"),
+          onPending: () => alert("Menunggu pembayaran..."),
+          onError: () => alert("Pembayaran gagal"),
+          onClose: () => alert("Anda menutup pembayaran"),
         });
+
       } catch (err) {
         console.error(err);
-        alert("Terjadi kesalahan membuat transaksi");
+        alert("Gagal membuat transaksi.");
       }
 
       this.loading = false;
@@ -86,56 +90,138 @@ export default {
 </script>
 
 <style scoped>
-.payment-container {
-  max-width: 450px;
-  margin: 40px auto;
-  padding: 15px;
-}
+/* ======================== */
+/*       WRAPPER + BG       */
+/* ======================== */
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-.title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
+  /* BACKGROUND PREMIUM */
+  background: radial-gradient(circle at top left, #7c89ff, #4a54e0 40%, #2e3ab5);
+  background-attachment: fixed;
 
-.card {
   padding: 20px;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.label {
-  font-weight: bold;
+/* ======================== */
+/*         CARD UI          */
+/* ======================== */
+.card {
+  width: 100%;
+  max-width: 430px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 28px;
+  border-radius: 22px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  animation: fadeIn .55s ease-out;
+}
+
+/* ======================== */
+/*        BRANDING          */
+/* ======================== */
+.brand {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.logo {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
   margin-bottom: 5px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+}
+
+.title-brand {
+  font-size: 20px;
+  margin-top: 0;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+.title-brand .highlight {
+  color: #f7b731;
+}
+
+/* ======================== */
+/*      PAYMENT TITLE       */
+/* ======================== */
+.payment-title {
+  font-size: 22px;
+  text-align: center;
+  margin-bottom: 22px;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+/* ======================== */
+/*         FORM UI          */
+/* ======================== */
+.form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a4a4a;
+  margin-bottom: 6px;
   display: block;
 }
 
-.input {
+.form input {
   width: 100%;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1.6px solid #c8ceff;
+  font-size: 15px;
   margin-bottom: 20px;
+  transition: .25s ease;
 }
 
-.pay-btn {
+.form input:focus {
+  border-color: #5a6dfc;
+  box-shadow: 0 0 10px rgba(90, 109, 252, .45);
+}
+
+/* ======================== */
+/*        BUTTON UI         */
+/* ======================== */
+.form button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: none;
-  background: #5b6ef5;
-  color: white;
-  border-radius: 6px;
+  border-radius: 12px;
+  background: #5a6dfc;
+  color: #fff;
+  font-weight: 600;
   font-size: 16px;
   cursor: pointer;
+  transition: .25s ease;
 }
 
-.pay-btn:disabled {
-  background: #9ea7ff;
+.form button:hover {
+  background: #4f60f2;
+  transform: translateY(-2px);
+}
+
+.form button:disabled {
+  background: #9ba3ff;
   cursor: not-allowed;
+  transform: none;
 }
 
-.pay-btn:hover {
-  background: #4b5ed9;
+/* ======================== */
+/*        ANIMATIONS        */
+/* ======================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(.93);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>
